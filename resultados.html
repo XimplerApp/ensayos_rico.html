@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Resultados de Ensayos - Galera</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    :root{
+      --bg:#0f172a;
+      --card:#1e293b;
+      --line:#334155;
+      --text:#e2e8f0;
+      --muted:#94a3b8;
+      --primary:#38bdf8;
+      --danger:#ef4444;
+      --success:#22c55e;
+      --warn:#f59e0b;
+      --yellow:#facc15;
+    }
+    *{box-sizing:border-box}
+    body{
+      font-family:Arial,sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      padding:20px;
+    }
+    h1{color:var(--primary);margin-top:0}
+    h2,h3{margin-top:0}
+    .container{max-width:1200px;margin:auto}
+    .card{
+      background:var(--card);
+      padding:20px;
+      border-radius:12px;
+      margin-bottom:20px;
+      border:1px solid var(--line);
+    }
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+      gap:12px;
+    }
+    label{
+      display:block;
+      font-size:14px;
+      color:var(--muted);
+      margin-top:6px;
+    }
+    input,select,button{
+      width:100%;
+      padding:10px;
+      border-radius:8px;
+      border:none;
+    }
+    input,select{
+      margin-top:6px;
+      background:#fff;
+      color:#111827;
+    }
+    button{
+      background:var(--primary);
+      cursor:pointer;
+      font-weight:700;
+    }
+    .save{background:var(--success);color:#fff}
+    .delete{background:var(--danger);color:#fff}
+    .edit{background:var(--warn);color:#111827}
+    .export{background:var(--success);color:#fff}
+    .nav{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:20px;
+    }
+    .nav a{text-decoration:none}
+    .nav button,.actions button{width:auto}
+    .actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:14px;
+    }
+    .kpi{
+      font-size:18px;
+      margin:8px 0;
+      line-height:1.4;
+    }
+    .green{color:var(--success)}
+    .red{color:var(--danger)}
+    .yellow{color:var(--yellow)}
+    .muted{color:var(--muted)}
+    .result-card{
+      background:#0b1220;
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:16px;
+      margin-top:12px;
+    }
+    hr{
+      border:none;
+      border-top:1px solid var(--line);
+      margin:14px 0;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <div class="nav">
+    <a href="index.html"><button>📋 Ensayos</button></a>
+    <a href="bitacora.html"><button>📸 Bitácora</button></a>
+    <a href="resultados.html"><button>📊 Resultados</button></a>
+    <a href="pipeline.html"><button>🌱 Pipeline</button></a>
+    <a href="tablero.html"><button>🧠 Tablero</button></a>
+    <a href="inteligencia.html"><button>🚀 Inteligencia</button></a>
+    <a href="innovacion.html"><button>🧬 Innovación</button></a>
+  </div>
+
+  <h1>📊 Resultados de Ensayos</h1>
+
+  <div class="card">
+    <h2 id="modo">Nuevo Resultado</h2>
+
+    <div class="grid">
+      <div>
+        <label>Ensayo</label>
+        <select id="ensayoSelect"></select>
+      </div>
+      <div>
+        <label>Fecha de evaluación</label>
+        <input type="date" id="fechaEvaluacion">
+      </div>
+    </div>
+
+    <h3 style="margin-top:20px;">Resultados Técnicos</h3>
+    <div class="grid">
+      <div>
+        <label>Rendimiento Control (ton/ha)</label>
+        <input id="rendControl" placeholder="Ej. 5.2">
+      </div>
+      <div>
+        <label>Rendimiento Tratado (ton/ha)</label>
+        <input id="rendTratado" placeholder="Ej. 6.1">
+      </div>
+      <div>
+        <label>Calidad comercial</label>
+        <input id="calidadComercial" placeholder="Ej. Calibre exportable alto">
+      </div>
+      <div>
+        <label>Incidencia de plaga (%)</label>
+        <input id="incidenciaPlaga" placeholder="Ej. 4">
+      </div>
+    </div>
+
+    <h3 style="margin-top:20px;">Costos del Ensayo</h3>
+    <div class="grid">
+      <div>
+        <label>Semillas $</label>
+        <input id="semillas" placeholder="Ej. 3500">
+      </div>
+      <div>
+        <label>Insumos $</label>
+        <input id="insumos" placeholder="Ej. 2200">
+      </div>
+      <div>
+        <label>Material $</label>
+        <input id="material" placeholder="Ej. 800">
+      </div>
+      <div>
+        <label>Horas técnico</label>
+        <input id="horas" placeholder="Ej. 12">
+      </div>
+      <div>
+        <label>Costo por hora $</label>
+        <input id="costoHora" placeholder="Ej. 250">
+      </div>
+      <div>
+        <label>Traslados $</label>
+        <input id="traslados" placeholder="Ej. 900">
+      </div>
+      <div>
+        <label>Otros $</label>
+        <input id="otros" placeholder="Ej. 450">
+      </div>
+    </div>
+
+    <h3 style="margin-top:20px;">Mercado</h3>
+    <div class="grid">
+      <div>
+        <label>Precio por kg $</label>
+        <input id="precio" placeholder="Ej. 16.5">
+      </div>
+      <div>
+        <label>Costo de producción por kg $</label>
+        <input id="costoProduccion" placeholder="Ej. 10.2">
+      </div>
+    </div>
+
+    <div class="actions">
+      <button onclick="calcular()">Calcular + Evaluar</button>
+      <button class="save" onclick="guardar()">Guardar resultado</button>
+      <button class="edit" id="btnCancelar" onclick="cancelarEdicion()" style="display:none;">Cancelar edición</button>
+      <button class="export" onclick="exportarExcel()">📊 Exportar Excel</button>
+    </div>
+
+    <div id="kpis" style="margin-top:18px;"></div>
+  </div>
+
+  <div class="card">
+    <h2>Resultados Guardados</h2>
+    <div class="muted">Nota: este archivo mantiene un resultado vigente por ensayo. Si guardas nuevamente el mismo ensayo, se actualiza.</div>
+    <div id="lista"></div>
+  </div>
+
+</div>
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  function getData(key){
+    try { return JSON.parse(localStorage.getItem(key)) || []; }
+    catch(e){ return []; }
+  }
+
+  function saveData(key, data){
+    localStorage.setItem(key, JSON.stringify(data));
+  }
+
+  function ensayoLabel(e){
+    return `${e.id} | ${e.cultivo || ""} | ${e.variedad_tratada || ""} | ${e.productor || ""}`;
+  }
+
+  function formatMoney(n){
+    return "$" + new Intl.NumberFormat("es-MX", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(Number(n || 0));
+  }
+
+  function formatPct(n){
+    return new Intl.NumberFormat("es-MX", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(Number(n || 0)) + "%";
+  }
+
+  function formatNum(n){
+    return new Intl.NumberFormat("es-MX", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(Number(n || 0));
+  }
+
+  function formatDate(iso){
+    if(!iso) return "";
+    const d = new Date(iso + "T00:00:00");
+    if(isNaN(d)) return iso;
+    return d.toLocaleDateString("es-MX");
+  }
+
+  function parseNumber(value){
+    if(value === null || value === undefined) return 0;
+    const clean = String(value).trim().replace(/,/g, "");
+    const num = parseFloat(clean);
+    return isNaN(num) ? 0 : num;
+  }
+
+  let ensayos = getData("ensayos");
+  let resultados = getData("resultados");
+  let editId = null;
+  let tmp = null;
+
+  function cargarEnsayos(){
+    $("ensayoSelect").innerHTML = "";
+    ensayos.forEach(e => {
+      $("ensayoSelect").innerHTML += `<option value="${e.id}">${ensayoLabel(e)}</option>`;
+    });
+  }
+
+  function todayISO(){
+    return new Date().toISOString().slice(0,10);
+  }
+
+  function evaluar(roi, diferencia){
+    if(diferencia < 0){
+      return {
+        evaluacion: "No exitoso",
+        recomendacion: "Detener inmediatamente",
+        repetir: "No"
+      };
+    }
+
+    if(roi < 0){
+      return {
+        evaluacion: "No exitoso",
+        recomendacion: "No escalar, revisar causa",
+        repetir: "No"
+      };
+    }
+
+    if(roi < 0.3){
+      return {
+        evaluacion: "Parcial",
+        recomendacion: "Ajustar variables",
+        repetir: "Sí"
+      };
+    }
+
+    return {
+      evaluacion: "Exitoso",
+      recomendacion: "Escalar comercialmente",
+      repetir: "Sí"
+    };
+  }
+
+  function calcular(){
+    const rc = parseNumber($("rendControl").value);
+    const rt = parseNumber($("rendTratado").value);
+
+    const semillasVal = parseNumber($("semillas").value);
+    const ins = parseNumber($("insumos").value);
+    const mat = parseNumber($("material").value);
+    const hrs = parseNumber($("horas").value);
+    const costoHr = parseNumber($("costoHora").value);
+    const tras = parseNumber($("traslados").value);
+    const otr = parseNumber($("otros").value);
+
+    const precioVal = parseNumber($("precio").value);
+    const costoProd = parseNumber($("costoProduccion").value);
+
+    const calidadComercial = $("calidadComercial").value.trim();
+    const incidenciaPlaga = parseNumber($("incidenciaPlaga").value);
+
+    const costoHoras = hrs * costoHr;
+    const diferencia = rt - rc;
+    const porcentaje = rc ? (diferencia / rc) * 100 : 0;
+    const diferenciaKg = diferencia * 1000;
+    const margenUnitario = precioVal - costoProd;
+    const margen = diferenciaKg * margenUnitario;
+    const costoTotal = semillasVal + ins + mat + costoHoras + tras + otr;
+    const roi = costoTotal ? (margen - costoTotal) / costoTotal : 0;
+
+    const decision = evaluar(roi, diferencia);
+
+    tmp = {
+      rendControl: rc,
+      rendTratado: rt,
+      calidadComercial,
+      incidenciaPlaga,
+      semillas: semillasVal,
+      insumos: ins,
+      material: mat,
+      horas: hrs,
+      costoHora: costoHr,
+      costoHoras,
+      traslados: tras,
+      otros: otr,
+      precio: precioVal,
+      costoProduccion: costoProd,
+      diferencia,
+      diferenciaKg,
+      porcentaje,
+      margenUnitario,
+      margen,
+      costoTotal,
+      roi,
+      ...decision
+    };
+
+    const roiClass = roi >= 0.3 ? "green" : roi >= 0 ? "yellow" : "red";
+
+    $("kpis").innerHTML = `
+      <div class="kpi">📈 Diferencia: <b>${formatNum(diferencia)} ton/ha</b></div>
+      <div class="kpi">📊 Mejora vs control: <b>${formatPct(porcentaje)}</b></div>
+      <div class="kpi">🌾 Rendimiento tratado: <b>${formatNum(rt)} ton/ha</b></div>
+      <div class="kpi">🌱 Rendimiento control: <b>${formatNum(rc)} ton/ha</b></div>
+      <div class="kpi">💰 Margen incremental: <b>${formatMoney(margen)}</b></div>
+      <div class="kpi">💸 Costo total ensayo: <b>${formatMoney(costoTotal)}</b></div>
+      <div class="kpi ${roiClass}">ROI: <b>${formatPct(roi * 100)}</b></div>
+      <hr>
+      <div class="kpi">📊 Evaluación: <b>${decision.evaluacion}</b></div>
+      <div class="kpi">🧠 Recomendación: <b>${decision.recomendacion}</b></div>
+      <div class="kpi">🔁 Repetir ensayo: <b>${decision.repetir}</b></div>
+    `;
+  }
+
+  function limpiarFormulario(){
+    editId = null;
+    tmp = null;
+    $("modo").innerText = "Nuevo Resultado";
+    $("btnCancelar").style.display = "none";
+    $("fechaEvaluacion").value = todayISO();
+
+    [
+      "rendControl","rendTratado","calidadComercial","incidenciaPlaga",
+      "semillas","insumos","material","horas","costoHora","traslados","otros",
+      "precio","costoProduccion"
+    ].forEach(id => $(id).value = "");
+
+    $("kpis").innerHTML = "";
+  }
+
+  function cancelarEdicion(){
+    limpiarFormulario();
+  }
+
+  function cargarResultadoEnFormulario(r){
+    $("fechaEvaluacion").value = r.fechaEvaluacion || todayISO();
+    $("rendControl").value = r.rendControl ?? "";
+    $("rendTratado").value = r.rendTratado ?? "";
+    $("calidadComercial").value = r.calidadComercial ?? "";
+    $("incidenciaPlaga").value = r.incidenciaPlaga ?? "";
+    $("semillas").value = r.semillas ?? "";
+    $("insumos").value = r.insumos ?? "";
+    $("material").value = r.material ?? "";
+    $("horas").value = r.horas ?? "";
+    $("costoHora").value = r.costoHora ?? "";
+    $("traslados").value = r.traslados ?? "";
+    $("otros").value = r.otros ?? "";
+    $("precio").value = r.precio ?? "";
+    $("costoProduccion").value = r.costoProduccion ?? "";
+
+    tmp = {
+      rendControl: Number(r.rendControl || 0),
+      rendTratado: Number(r.rendTratado || 0),
+      calidadComercial: r.calidadComercial || "",
+      incidenciaPlaga: Number(r.incidenciaPlaga || 0),
+      semillas: Number(r.semillas || 0),
+      insumos: Number(r.insumos || 0),
+      material: Number(r.material || 0),
+      horas: Number(r.horas || 0),
+      costoHora: Number(r.costoHora || 0),
+      costoHoras: Number(r.costoHoras || 0),
+      traslados: Number(r.traslados || 0),
+      otros: Number(r.otros || 0),
+      precio: Number(r.precio || 0),
+      costoProduccion: Number(r.costoProduccion || 0),
+      diferencia: Number(r.diferencia || 0),
+      diferenciaKg: Number(r.diferenciaKg || 0),
+      porcentaje: Number(r.porcentaje || 0),
+      margenUnitario: Number(r.margenUnitario || 0),
+      margen: Number(r.margen || 0),
+      costoTotal: Number(r.costoTotal || 0),
+      roi: Number(r.roi || 0),
+      evaluacion: r.evaluacion || "",
+      recomendacion: r.recomendacion || "",
+      repetir: r.repetir || ""
+    };
+
+    const roiClass = tmp.roi >= 0.3 ? "green" : tmp.roi >= 0 ? "yellow" : "red";
+
+    $("kpis").innerHTML = `
+      <div class="kpi">📈 Diferencia: <b>${formatNum(tmp.diferencia)} ton/ha</b></div>
+      <div class="kpi">📊 Mejora vs control: <b>${formatPct(tmp.porcentaje)}</b></div>
+      <div class="kpi">🌾 Rendimiento tratado: <b>${formatNum(tmp.rendTratado)} ton/ha</b></div>
+      <div class="kpi">🌱 Rendimiento control: <b>${formatNum(tmp.rendControl)} ton/ha</b></div>
+      <div class="kpi">💰 Margen incremental: <b>${formatMoney(tmp.margen)}</b></div>
+      <div class="kpi">💸 Costo total ensayo: <b>${formatMoney(tmp.costoTotal)}</b></div>
+      <div class="kpi ${roiClass}">ROI: <b>${formatPct(tmp.roi * 100)}</b></div>
+      <hr>
+      <div class="kpi">📊 Evaluación: <b>${tmp.evaluacion}</b></div>
+      <div class="kpi">🧠 Recomendación: <b>${tmp.recomendacion}</b></div>
+      <div class="kpi">🔁 Repetir ensayo: <b>${tmp.repetir}</b></div>
+    `;
+  }
+
+  function guardar(){
+    if(!$("ensayoSelect").value){
+      alert("Selecciona un ensayo.");
+      return;
+    }
+
+    if(!tmp){
+      alert("Primero calcula el resultado.");
+      return;
+    }
+
+    const ensayoId = $("ensayoSelect").value;
+    const nowIso = new Date().toISOString();
+    const fechaEvaluacion = $("fechaEvaluacion").value || todayISO();
+
+    const existente = resultados.find(r => String(r.ensayo_id) === String(ensayoId));
+
+    const data = {
+      id: existente ? existente.id : (editId || Date.now()),
+      ensayo_id: ensayoId,
+      fechaEvaluacion,
+      fechaISO: existente ? (existente.fechaISO || nowIso) : nowIso,
+      fechaActualizacionISO: nowIso,
+      ...tmp
+    };
+
+    if(existente){
+      resultados = resultados.map(r => String(r.ensayo_id) === String(ensayoId) ? data : r);
+    } else {
+      resultados.push(data);
+    }
+
+    saveData("resultados", resultados);
+    render();
+    limpiarFormulario();
+    $("ensayoSelect").value = ensayoId;
+  }
+
+  function editar(id){
+    const r = resultados.find(x => x.id === id);
+    if(!r) return;
+
+    editId = id;
+    $("modo").innerText = "Editar Resultado";
+    $("btnCancelar").style.display = "inline-block";
+    $("ensayoSelect").value = r.ensayo_id;
+    cargarResultadoEnFormulario(r);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function eliminar(id){
+    if(!confirm("¿Eliminar este resultado?")) return;
+    resultados = resultados.filter(r => r.id !== id);
+    saveData("resultados", resultados);
+    render();
+  }
+
+  function render(){
+    $("lista").innerHTML = "";
+
+    const ordenados = resultados
+      .slice()
+      .sort((a,b) => String(b.fechaActualizacionISO || b.fechaISO || "").localeCompare(String(a.fechaActualizacionISO || a.fechaISO || "")));
+
+    if(!ordenados.length){
+      $("lista").innerHTML = `<p class="muted">Aún no hay resultados guardados.</p>`;
+      return;
+    }
+
+    ordenados.forEach(r => {
+      const e = ensayos.find(x => String(x.id) === String(r.ensayo_id)) || {};
+      const roiClass = Number(r.roi || 0) >= 0.3 ? "green" : Number(r.roi || 0) >= 0 ? "yellow" : "red";
+
+      $("lista").innerHTML += `
+        <div class="result-card">
+          <h3>${ensayoLabel(e)}</h3>
+          <p class="muted">Fecha evaluación: ${formatDate(r.fechaEvaluacion)}</p>
+
+          <p>🌾 Rendimiento tratado: <b>${formatNum(r.rendTratado)} ton/ha</b></p>
+          <p>🌱 Rendimiento control: <b>${formatNum(r.rendControl)} ton/ha</b></p>
+          <p>📈 Diferencia: <b>${formatNum(r.diferencia)} ton/ha</b></p>
+          <p>📊 Mejora: <b>${formatPct(r.porcentaje)}</b></p>
+
+          <p>💰 Margen incremental: <b>${formatMoney(r.margen)}</b></p>
+          <p>💸 Costo total: <b>${formatMoney(r.costoTotal)}</b></p>
+          <p class="${roiClass}">ROI: <b>${formatPct(Number(r.roi || 0) * 100)}</b></p>
+
+          <hr>
+
+          <p>📊 Evaluación: <b>${r.evaluacion || ""}</b></p>
+          <p>🧠 Recomendación: <b>${r.recomendacion || ""}</b></p>
+          <p>🔁 Repetir ensayo: <b>${r.repetir || ""}</b></p>
+          <p>🏷 Calidad comercial: <b>${r.calidadComercial || "N/D"}</b></p>
+          <p>🐛 Incidencia plaga: <b>${formatNum(r.incidenciaPlaga || 0)}%</b></p>
+
+          <div class="actions">
+            <button class="edit" onclick="editar(${r.id})">Editar</button>
+            <button class="delete" onclick="eliminar(${r.id})">Eliminar</button>
+          </div>
+        </div>
+      `;
+    });
+  }
+
+  function exportarExcel(){
+    const data = resultados.map(r => {
+      const e = ensayos.find(x => String(x.id) === String(r.ensayo_id)) || {};
+      return {
+        "ID Ensayo": e.id || "",
+        "Cultivo": e.cultivo || "",
+        "Variedad Tratada": e.variedad_tratada || "",
+        "Productor": e.productor || "",
+        "Región": e.region || "",
+        "Fecha Evaluación": r.fechaEvaluacion || "",
+        "Rendimiento Control (ton/ha)": r.rendControl || 0,
+        "Rendimiento Tratado (ton/ha)": r.rendTratado || 0,
+        "Diferencia (ton/ha)": r.diferencia || 0,
+        "Diferencia (kg/ha)": r.diferenciaKg || 0,
+        "% Mejora": r.porcentaje || 0,
+        "Calidad Comercial": r.calidadComercial || "",
+        "Incidencia Plaga %": r.incidenciaPlaga || 0,
+        "Semillas $": r.semillas || 0,
+        "Insumos $": r.insumos || 0,
+        "Material $": r.material || 0,
+        "Horas Técnico": r.horas || 0,
+        "Costo por Hora $": r.costoHora || 0,
+        "Costo Horas $": r.costoHoras || 0,
+        "Traslados $": r.traslados || 0,
+        "Otros $": r.otros || 0,
+        "Costo Total $": r.costoTotal || 0,
+        "Precio por kg $": r.precio || 0,
+        "Costo Producción por kg $": r.costoProduccion || 0,
+        "Margen Unitario $": r.margenUnitario || 0,
+        "Margen Incremental $": r.margen || 0,
+        "ROI": r.roi || 0,
+        "Evaluación": r.evaluacion || "",
+        "Recomendación": r.recomendacion || "",
+        "Repetir": r.repetir || "",
+        "Fecha ISO": r.fechaISO || "",
+        "Fecha Actualización ISO": r.fechaActualizacionISO || ""
+      };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Resultados");
+    XLSX.writeFile(wb, "Resultados_Ensayos_Galera_Ajustado.xlsx");
+  }
+
+  cargarEnsayos();
+  $("fechaEvaluacion").value = todayISO();
+  render();
+</script>
+</body>
+</html>
