@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Inteligencia de Mercado - Galera</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <style>
+    :root{
+      --bg:#0f172a;
+      --card:#1e293b;
+      --line:#334155;
+      --text:#e2e8f0;
+      --muted:#94a3b8;
+      --primary:#38bdf8;
+      --danger:#ef4444;
+      --success:#22c55e;
+      --warn:#f59e0b;
+      --yellow:#facc15;
+    }
+
+    *{box-sizing:border-box}
+
+    body{
+      font-family:Arial,sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      padding:20px;
+      margin:0;
+    }
+
+    h1{
+      color:var(--primary);
+      margin-top:0;
+    }
+
+    h2,h3{
+      margin-top:0;
+    }
+
+    .container{
+      max-width:1280px;
+      margin:auto;
+    }
+
+    .card{
+      background:var(--card);
+      padding:20px;
+      border-radius:12px;
+      margin-bottom:20px;
+      border:1px solid var(--line);
+    }
+
+    .nav{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:20px;
+    }
+
+    .nav a{text-decoration:none}
+
+    button{
+      padding:10px;
+      border-radius:8px;
+      border:none;
+      background:var(--primary);
+      cursor:pointer;
+      font-weight:700;
+      color:#082f49;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+      gap:12px;
+    }
+
+    label{
+      display:block;
+      font-size:14px;
+      color:var(--muted);
+      margin-bottom:6px;
+    }
+
+    select,input{
+      width:100%;
+      padding:10px;
+      border-radius:8px;
+      border:none;
+      background:#fff;
+      color:#111827;
+    }
+
+    .actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:14px;
+    }
+
+    .actions button{
+      width:auto;
+    }
+
+    .mini{
+      background:#0b1220;
+      border:1px solid var(--line);
+      border-radius:10px;
+      padding:14px;
+    }
+
+    .mini span{
+      display:block;
+      color:var(--muted);
+      font-size:13px;
+      margin-bottom:6px;
+    }
+
+    .mini b{
+      font-size:22px;
+      color:var(--primary);
+    }
+
+    #map{
+      height:430px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      margin-top:12px;
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      margin-top:12px;
+    }
+
+    th,td{
+      padding:10px;
+      border:1px solid var(--line);
+      text-align:center;
+      vertical-align:middle;
+    }
+
+    th{
+      background:#0b1220;
+    }
+
+    .kpi{
+      font-size:18px;
+      margin:8px 0;
+      line-height:1.45;
+    }
+
+    .green{color:var(--success)}
+    .red{color:var(--danger)}
+    .yellow{color:var(--yellow)}
+    .muted{color:var(--muted)}
+
+    .list-block{
+      background:#0b1220;
+      border:1px solid var(--line);
+      border-radius:10px;
+      padding:14px;
+      margin-top:10px;
+    }
+
+    .empty{
+      color:var(--muted);
+      font-style:italic;
+    }
+
+    .section-title{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+
+    .badge{
+      display:inline-block;
+      padding:4px 10px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:700;
+      background:#0b1220;
+      border:1px solid var(--line);
+      color:var(--muted);
+    }
+
+    .popup{
+      color:#111827;
+      line-height:1.4;
+      min-width:220px;
+    }
+
+    .popup b{
+      color:#0f172a;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <div class="nav">
+    <a href="index.html"><button>📋 Ensayos</button></a>
+    <a href="bitacora.html"><button>📸 Bitácora</button></a>
+    <a href="resultados.html"><button>📊 Resultados</button></a>
+    <a href="pipeline.html"><button>🌱 Pipeline</button></a>
+    <a href="tablero.html"><button>🧠 Tablero</button></a>
+    <a href="inteligencia.html"><button>🚀 Inteligencia</button></a>
+    <a href="innovacion.html"><button>🧬 Innovación</button></a>
+  </div>
+
+  <h1>🚀 Inteligencia de Mercado</h1>
+
+  <div class="card">
+    <div class="section-title">
+      <h2>Filtros</h2>
+      <span class="badge">Aplican a tablas, ranking, RICE y mapa</span>
+    </div>
+
+    <div class="grid">
+      <div>
+        <label>Región</label>
+        <select id="filtroRegion"></select>
+      </div>
+      <div>
+        <label>Cultivo</label>
+        <select id="filtroCultivo"></select>
+      </div>
+      <div>
+        <label>Estado del ensayo</label>
+        <select id="filtroEstado"></select>
+      </div>
+      <div>
+        <label>Variedad tratada</label>
+        <select id="filtroVariedad"></select>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button onclick="aplicarFiltros()">Aplicar filtros</button>
+      <button onclick="limpiarFiltros()">Limpiar filtros</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">
+      <h2>Resumen Estratégico</h2>
+      <span class="badge">Vista ejecutiva</span>
+    </div>
+    <div class="grid" id="resumenEstrategico"></div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">
+      <h2>🗺 Mapa Estratégico de Ensayos</h2>
+      <span class="badge">Usa la última geolocalización disponible por ensayo</span>
+    </div>
+    <div id="map"></div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">
+      <h2>🏆 Ranking de Variedades</h2>
+      <span class="badge">Agrupado por variedad tratada</span>
+    </div>
+    <table id="ranking"></table>
+  </div>
+
+  <div class="card">
+    <div class="section-title">
+      <h2>🌍 Ensayos por Región</h2>
+      <span class="badge">Detalle consolidado</span>
+    </div>
+    <table id="tablaRegion"></table>
+  </div>
+
+  <div class="card">
+    <div class="section-title">
+      <h2>⚡ Motor de Prioridad (RICE)</h2>
+      <span class="badge">Usa leads, ventas, ROI y costo total</span>
+    </div>
+    <div id="rice"></div>
+  </div>
+
+</div>
+
+<script>
+  function getData(key){
+    try{
+      return JSON.parse(localStorage.getItem(key)) || [];
+    }catch(e){
+      return [];
+    }
+  }
+
+  const money = n => "$" + new Intl.NumberFormat("es-MX", {
+    minimumFractionDigits:2,
+    maximumFractionDigits:2
+  }).format(Number(n || 0));
+
+  const pct = n => new Intl.NumberFormat("es-MX", {
+    minimumFractionDigits:2,
+    maximumFractionDigits:2
+  }).format(Number(n || 0)) + "%";
+
+  const num = n => new Intl.NumberFormat("es-MX", {
+    minimumFractionDigits:2,
+    maximumFractionDigits:2
+  }).format(Number(n || 0));
+
+  function formatDate(iso){
+    if(!iso) return "";
+    const d = new Date(iso + "T00:00:00");
+    if(isNaN(d)) return iso;
+    return d.toLocaleDateString("es-MX");
+  }
+
+  function ensayoLabel(e){
+    return `${e.id} | ${e.cultivo || ""} | ${e.variedad_tratada || ""} | ${e.productor || ""}`;
+  }
+
+  let ensayos = getData("ensayos");
+  let resultados = getData("resultados");
+  let oportunidades = getData("oportunidades");
+  let bitacora = getData("bitacora");
+
+  const map = L.map("map").setView([23.6, -102.5], 5);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19
+  }).addTo(map);
+
+  let markerLayer = L.layerGroup().addTo(map);
+
+  function latestResultadosMap(){
+    const mapObj = {};
+    resultados.forEach(r => {
+      const key = String(r.ensayo_id);
+      if(!mapObj[key]){
+        mapObj[key] = r;
+      }else{
+        const a = String(r.fechaActualizacionISO || r.fechaISO || r.id || "");
+        const b = String(mapObj[key].fechaActualizacionISO || mapObj[key].fechaISO || mapObj[key].id || "");
+        if(a > b){
+          mapObj[key] = r;
+        }
+      }
+    });
+    return mapObj;
+  }
+
+  function latestBitacoraMap(){
+    const mapObj = {};
+    bitacora.forEach(b => {
+      const key = String(b.ensayo_id);
+      if(typeof b.lat !== "number" || typeof b.lng !== "number") return;
+
+      if(!mapObj[key]){
+        mapObj[key] = b;
+      }else{
+        const a = String(b.fechaActualizacionISO || b.fechaISO || b.id || "");
+        const c = String(mapObj[key].fechaActualizacionISO || mapObj[key].fechaISO || mapObj[key].id || "");
+        if(a > c){
+          mapObj[key] = b;
+        }
+      }
+    });
+    return mapObj;
+  }
+
+  function opportunitiesByEnsayo(ensayoId){
+    return oportunidades.filter(o => String(o.ensayo) === String(ensayoId));
+  }
+
+  function getCurrentFilters(){
+    return {
+      region: document.getElementById("filtroRegion").value,
+      cultivo: document.getElementById("filtroCultivo").value,
+      estado: document.getElementById("filtroEstado").value,
+      variedad: document.getElementById("filtroVariedad").value
+    };
+  }
+
+  function getFilteredEnsayos(){
+    const f = getCurrentFilters();
+
+    return ensayos.filter(e => {
+      if(f.region && e.region !== f.region) return false;
+      if(f.cultivo && e.cultivo !== f.cultivo) return false;
+      if(f.estado && e.estado !== f.estado) return false;
+      if(f.variedad && e.variedad_tratada !== f.variedad) return false;
+      return true;
+    });
+  }
+
+  function cargarFiltros(){
+    const regiones = [...new Set(ensayos.map(e => e.region).filter(Boolean))].sort();
+    const cultivos = [...new Set(ensayos.map(e => e.cultivo).filter(Boolean))].sort();
+    const estados = [...new Set(ensayos.map(e => e.estado).filter(Boolean))].sort();
+    const variedades = [...new Set(ensayos.map(e => e.variedad_tratada).filter(Boolean))].sort();
+
+    document.getElementById("filtroRegion").innerHTML =
+      `<option value="">Todas</option>` +
+      regiones.map(v => `<option value="${v}">${v}</option>`).join("");
+
+    document.getElementById("filtroCultivo").innerHTML =
+      `<option value="">Todos</option>` +
+      cultivos.map(v => `<option value="${v}">${v}</option>`).join("");
+
+    document.getElementById("filtroEstado").innerHTML =
+      `<option value="">Todos</option>` +
+      estados.map(v => `<option value="${v}">${v}</option>`).join("");
+
+    document.getElementById("filtroVariedad").innerHTML =
+      `<option value="">Todas</option>` +
+      variedades.map(v => `<option value="${v}">${v}</option>`).join("");
+  }
+
+  function limpiarFiltros(){
+    document.getElementById("filtroRegion").value = "";
+    document.getElementById("filtroCultivo").value = "";
+    document.getElementById("filtroEstado").value = "";
+    document.getElementById("filtroVariedad").value = "";
+    aplicarFiltros();
+  }
+
+  function getROIClass(roi){
+    if(roi >= 0.3) return "green";
+    if(roi >= 0) return "yellow";
+    return "red";
+  }
+
+  function renderResumen(){
+    const lista = getFilteredEnsayos();
+    const resultadosMap = latestResultadosMap();
+
+    const ensayosConResultado = lista.filter(e => resultadosMap[String(e.id)]).length;
+    const ensayosConVenta = lista.filter(e => {
+      return opportunitiesByEnsayo(e.id).reduce((a,b) => a + Number(b.ventaCerrada || 0), 0) > 0;
+    }).length;
+
+    const totalVentas = lista.reduce((acc,e) => {
+      return acc + opportunitiesByEnsayo(e.id).reduce((a,b) => a + Number(b.ventaCerrada || 0), 0);
+    }, 0);
+
+    const totalLeads = lista.reduce((acc,e) => {
+      return acc + opportunitiesByEnsayo(e.id).reduce((a,b) => a + Number(b.leads || 0), 0);
+    }, 0);
+
+    const roiValues = lista
+      .map(e => resultadosMap[String(e.id)]?.roi)
+      .filter(v => typeof v === "number");
+
+    const roiProm = roiValues.length
+      ? roiValues.reduce((a,b) => a + b, 0) / roiValues.length
+      : 0;
+
+    document.getElementById("resumenEstrategico").innerHTML = `
+      <div class="mini">
+        <span>Ensayos filtrados</span>
+        <b>${lista.length}</b>
+      </div>
+      <div class="mini">
+        <span>Con resultado</span>
+        <b>${ensayosConResultado}</b>
+      </div>
+      <div class="mini">
+        <span>Con venta cerrada</span>
+        <b>${ensayosConVenta}</b>
+      </div>
+      <div class="mini">
+        <span>Leads acumulados</span>
+        <b>${num(totalLeads)}</b>
+      </div>
+      <div class="mini">
+        <span>Ventas cerradas</span>
+        <b>${money(totalVentas)}</b>
+      </div>
+      <div class="mini">
+        <span>ROI promedio</span>
+        <b>${pct(roiProm * 100)}</b>
+      </div>
+    `;
+  }
+
+  function renderMap(){
+    markerLayer.clearLayers();
+
+    const lista = getFilteredEnsayos();
+    const resultadosMap = latestResultadosMap();
+    const bitacoraMap = latestBitacoraMap();
+
+    const bounds = [];
+
+    lista.forEach(e => {
+      const b = bitacoraMap[String(e.id)];
+      if(!b) return;
+
+      const r = resultadosMap[String(e.id)] || {};
+      const ops = opportunitiesByEnsayo(e.id);
+      const leads = ops.reduce((a,x) => a + Number(x.leads || 0), 0);
+      const ventas = ops.reduce((a,x) => a + Number(x.ventaCerrada || 0), 0);
+      const roi = Number(r.roi || 0);
+
+      const popup = `
+        <div class="popup">
+          <b>${e.variedad_tratada || "Sin variedad"}</b><br>
+          Ensayo: ${e.id}<br>
+          Cultivo: ${e.cultivo || "N/D"}<br>
+          Región: ${e.region || "N/D"}<br>
+          Estado: ${e.estado || "N/D"}<br>
+          ROI: ${pct(roi * 100)}<br>
+          Leads: ${num(leads)}<br>
+          Venta cerrada: ${money(ventas)}<br>
+          Productor: ${e.productor || "N/D"}
+        </div>
+      `;
+
+      let markerColor = "red";
+      if(roi >= 0.3) markerColor = "green";
+      else if(roi >= 0) markerColor = "orange";
+
+      const icon = L.divIcon({
+        className: "custom-div-icon",
+        html: `<div style="background:${markerColor};width:14px;height:14px;border-radius:50%;border:2px solid white;"></div>`,
+        iconSize: [14,14],
+        iconAnchor: [7,7]
+      });
+
+      L.marker([b.lat, b.lng], { icon })
+        .addTo(markerLayer)
+        .bindPopup(popup);
+
+      bounds.push([b.lat, b.lng]);
+    });
+
+    if(bounds.length){
+      map.fitBounds(bounds, { padding:[30,30] });
+    }else{
+      map.setView([23.6, -102.5], 5);
+    }
+  }
+
+  function renderTablaRegion(){
+    const lista = getFilteredEnsayos();
+    const resultadosMap = latestResultadosMap();
+
+    let html = `
+      <tr>
+        <th>ID</th>
+        <th>Región</th>
+        <th>Cultivo</th>
+        <th>Variedad</th>
+        <th>Estado</th>
+        <th>ROI</th>
+        <th>Leads</th>
+        <th>Venta cerrada</th>
+        <th>Evaluación</th>
+      </tr>
+    `;
+
+    if(!lista.length){
+      html += `
+        <tr>
+          <td colspan="9" class="empty">No hay ensayos para los filtros seleccionados.</td>
+        </tr>
+      `;
+      document.getElementById("tablaRegion").innerHTML = html;
+      return;
+    }
+
+    lista
+      .slice()
+      .sort((a,b) => {
+        if((a.region || "") < (b.region || "")) return -1;
+        if((a.region || "") > (b.region || "")) return 1;
+        return 0;
+      })
+      .forEach(e => {
+        const r = resultadosMap[String(e.id)] || {};
+        const roi = Number(r.roi || 0);
+        const roiClass = getROIClass(roi);
+        const ops = opportunitiesByEnsayo(e.id);
+        const leads = ops.reduce((a,x) => a + Number(x.leads || 0), 0);
+        const ventas = ops.reduce((a,x) => a + Number(x.ventaCerrada || 0), 0);
+
+        html += `
+          <tr>
+            <td>${e.id}</td>
+            <td>${e.region || ""}</td>
+            <td>${e.cultivo || ""}</td>
+            <td>${e.variedad_tratada || ""}</td>
+            <td>${e.estado || ""}</td>
+            <td class="${roiClass}"><b>${pct(roi * 100)}</b></td>
+            <td>${num(leads)}</td>
+            <td>${money(ventas)}</td>
+            <td>${r.evaluacion || "Sin evaluar"}</td>
+          </tr>
+        `;
+      });
+
+    document.getElementById("tablaRegion").innerHTML = html;
+  }
+
+  function renderRanking(){
+    const lista = getFilteredEnsayos();
+    const resultadosMap = latestResultadosMap();
+
+    const variedades = {};
+
+    lista.forEach(e => {
+      const variedad = e.variedad_tratada || "Sin variedad";
+      const r = resultadosMap[String(e.id)] || null;
+      const ops = opportunitiesByEnsayo(e.id);
+
+      const ventas = ops.reduce((a,b) => a + Number(b.ventaCerrada || 0), 0);
+      const leads = ops.reduce((a,b) => a + Number(b.leads || 0), 0);
+      const tieneVenta = ventas > 0 ? 1 : 0;
+
+      if(!variedades[variedad]){
+        variedades[variedad] = {
+          ensayos: 0,
+          roiSum: 0,
+          roiCount: 0,
+          ventas: 0,
+          leads: 0,
+          adopcionCount: 0,
+          cultivos: new Set()
+        };
+      }
+
+      variedades[variedad].ensayos++;
+      variedades[variedad].ventas += ventas;
+      variedades[variedad].leads += leads;
+      variedades[variedad].adopcionCount += tieneVenta;
+      variedades[variedad].cultivos.add(e.cultivo || "");
+
+      if(r && typeof r.roi === "number"){
+        variedades[variedad].roiSum += Number(r.roi || 0);
+        variedades[variedad].roiCount++;
+      }
+    });
+
+    let html = `
+      <tr>
+        <th>Variedad</th>
+        <th>Cultivos</th>
+        <th>Ensayos</th>
+        <th>ROI promedio</th>
+        <th>Leads</th>
+        <th>Ventas</th>
+        <th>Adopción</th>
+      </tr>
+    `;
+
+    const entries = Object.entries(variedades)
+      .map(([variedad, data]) => ({
+        variedad,
+        ...data,
+        roiProm: data.roiCount ? data.roiSum / data.roiCount : 0,
+        adopcionReal: data.ensayos ? data.adopcionCount / data.ensayos : 0
+      }))
+      .sort((a,b) => b.roiProm - a.roiProm);
+
+    if(!entries.length){
+      html += `
+        <tr>
+          <td colspan="7" class="empty">No hay información suficiente para ranking.</td>
+        </tr>
+      `;
+      document.getElementById("ranking").innerHTML = html;
+      return;
+    }
+
+    entries.forEach(item => {
+      const nivel = item.adopcionReal > 0.6 ? "Alta" : item.adopcionReal > 0.3 ? "Media" : "Baja";
+      const roiClass = getROIClass(item.roiProm);
+
+      html += `
+        <tr>
+          <td><b>${item.variedad}</b></td>
+          <td>${[...item.cultivos].filter(Boolean).join(", ") || "N/D"}</td>
+          <td>${item.ensayos}</td>
+          <td class="${roiClass}"><b>${pct(item.roiProm * 100)}</b></td>
+          <td>${num(item.leads)}</td>
+          <td>${money(item.ventas)}</td>
+          <td>${nivel} (${pct(item.adopcionReal * 100)})</td>
+        </tr>
+      `;
+    });
+
+    document.getElementById("ranking").innerHTML = html;
+  }
+
+  function renderRICE(){
+    const lista = getFilteredEnsayos();
+    const resultadosMap = latestResultadosMap();
+
+    const variedades = {};
+
+    lista.forEach(e => {
+      const variedad = e.variedad_tratada || "Sin variedad";
+      const r = resultadosMap[String(e.id)] || null;
+      const ops = opportunitiesByEnsayo(e.id);
+
+      const leads = ops.reduce((a,b) => a + Number(b.leads || 0), 0);
+      const ventas = ops.reduce((a,b) => a + Number(b.ventaCerrada || 0), 0);
+      const roi = r ? Number(r.roi || 0) : 0;
+      const costo = r ? Number(r.costoTotal || 0) : 0;
+
+      if(!variedades[variedad]){
+        variedades[variedad] = {
+          reach: 0,
+          impact: 0,
+          confidenceSum: 0,
+          confidenceCount: 0,
+          effort: 0,
+          ensayos: 0
+        };
+      }
+
+      variedades[variedad].reach += leads;
+      variedades[variedad].impact += ventas;
+      variedades[variedad].effort += costo;
+      variedades[variedad].ensayos++;
+
+      if(r){
+        variedades[variedad].confidenceSum += roi;
+        variedades[variedad].confidenceCount++;
+      }
+    });
+
+    const bloques = Object.entries(variedades)
+      .map(([variedad, data]) => {
+        const reach = data.reach || 1;
+        const impact = data.impact || 1;
+
+        let confidence = data.confidenceCount
+          ? data.confidenceSum / data.confidenceCount
+          : 0;
+
+        if(confidence <= 0) confidence = 0.1;
+
+        let effort = data.effort || 1;
+        if(effort <= 0) effort = 1;
+
+        const score = (reach * impact * confidence) / effort;
+
+        let decision = "";
+        let texto = "";
+        let color = "";
+
+        if(score > 70){
+          decision = "🚀 ESCALAR";
+          texto = "Alta oportunidad comercial. Incrementar inversión, ensayos y empuje técnico.";
+          color = "green";
+        } else if(score > 30){
+          decision = "⚙️ OPTIMIZAR";
+          texto = "Buen potencial, pero requiere ajustes en ejecución o conversión.";
+          color = "yellow";
+        } else {
+          decision = "⛔ REVISAR";
+          texto = "Bajo rendimiento actual. Evaluar continuidad o rediseñar estrategia.";
+          color = "red";
+        }
+
+        return `
+          <div class="list-block">
+            <div class="kpi"><b>${variedad}</b></div>
+            <div class="kpi">Reach (leads): <b>${num(reach)}</b></div>
+            <div class="kpi">Impact (ventas): <b>${money(impact)}</b></div>
+            <div class="kpi">Confidence (ROI promedio): <b>${num(confidence)}</b></div>
+            <div class="kpi">Effort (costo total): <b>${money(effort)}</b></div>
+            <div class="kpi ${color}">Score RICE: <b>${num(score)}</b> | ${decision}</div>
+            <div class="kpi muted">${texto}</div>
+          </div>
+        `;
+      })
+      .join("");
+
+    document.getElementById("rice").innerHTML = bloques || `<p class="empty">No hay información suficiente para calcular RICE.</p>`;
+  }
+
+  function aplicarFiltros(){
+    renderResumen();
+    renderMap();
+    renderTablaRegion();
+    renderRanking();
+    renderRICE();
+  }
+
+  cargarFiltros();
+  aplicarFiltros();
+</script>
+</body>
+</html>
+
+Ahora sígueme con el siguiente y te lo doy igual.  
+Escríbeme solo: **innovacion.html**
