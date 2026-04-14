@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+    limpiarMapa();
+    lat = typeof b.lat === "number" ? b.lat : null;
+    lng = typeof b.lng === "number" ? b.lng : null;
+
+    if(lat !== null && lng !== null){
+      marker = L.marker([lat,lng]).addTo(map);
+      map.setView([lat,lng], 12);
+      $("coords").innerText = `Lat: ${lat.toFixed(5)} | Lng: ${lng.toFixed(5)}`;
+    }
+
+    window.scrollTo({top:0, behavior:"smooth"});
+  }
+
+  function eliminar(id){
+    if(!confirm("¿Eliminar este registro de bitácora?")) return;
+    bitacora = bitacora.filter(b => b.id !== id);
+    saveData("bitacora", bitacora);
+    render();
+  }
+
+  function render(){
+    const ensayoFiltro = $("filtroEnsayo").value;
+    const etapaFiltro = $("filtroEtapa").value;
+
+    let lista = bitacora.slice();
+    if(ensayoFiltro) lista = lista.filter(b => String(b.ensayo_id) === String(ensayoFiltro));
+    if(etapaFiltro) lista = lista.filter(b => b.etapa === etapaFiltro);
+
+    lista.sort((a,b) => String(b.fechaISO || "").localeCompare(String(a.fechaISO || "")));
+
+    $("timeline").innerHTML = lista.length ? "" : `<p class="muted">No hay registros para los filtros seleccionados.</p>`;
+
+    lista.forEach(b => {
+      const e = ensayos.find(x => String(x.id) === String(b.ensayo_id)) || {};
+      $("timeline").innerHTML += `
+        <div class="timeline-item">
+          <h3>${ensayoLabel(e)}</h3>
+          <p><b>Responsable:</b> ${b.responsable || ""}</p>
+          <p><b>Etapa:</b> ${b.etapa || ""}</p>
+          <p><b>Fecha:</b> ${formatDateTime(b.fechaActualizacionISO || b.fechaISO)}</p>
+          <p>${b.comentario || ""}</p>
+          ${typeof b.lat === "number" && typeof b.lng === "number" ? `<p class="muted">Lat: ${b.lat.toFixed(5)} | Lng: ${b.lng.toFixed(5)}</p>` : ""}
+          ${b.foto ? `<img src="${b.foto}" alt="Foto evidencia">` : ""}
+          <div class="actions">
+            <button class="edit" onclick="editar(${b.id})">Editar</button>
+            <button class="delete" onclick="eliminar(${b.id})">Eliminar</button>
+          </div>
+        </div>
+      `;
+    });
+  }
+
+  function exportarExcel(){
+    const data = bitacora.map(b => {
+      const e = ensayos.find(x => String(x.id) === String(b.ensayo_id)) || {};
+      return {
+        "ID Ensayo": b.ensayo_id,
+        "Cultivo": e.cultivo || "",
+        "Variedad": e.variedad_tratada || "",
+        "Productor": e.productor || "",
+        "Responsable": b.responsable,
+        "Etapa": b.etapa,
+        "Comentario": b.comentario,
+        "Lat": typeof b.lat === "number" ? b.lat : "",
+        "Lng": typeof b.lng === "number" ? b.lng : "",
+        "Fecha ISO": b.fechaISO || "",
+        "Última actualización ISO": b.fechaActualizacionISO || ""
+      };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Bitacora");
+    XLSX.writeFile(wb, "Bitacora_Galera_Ajustada.xlsx");
+  }
+
+  cargarEnsayos();
+  render();
+</script>
+</body>
+</html>
