@@ -1,0 +1,886 @@
+# index.html
+
+```html
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Registro de Ensayos - Galera</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    :root{
+      --bg:#0f172a; --card:#1e293b; --line:#334155; --text:#e2e8f0;
+      --muted:#94a3b8; --primary:#38bdf8; --danger:#ef4444; --success:#22c55e; --warn:#f59e0b;
+    }
+    *{box-sizing:border-box}
+    body{font-family:Arial,sans-serif;background:var(--bg);color:var(--text);padding:20px}
+    h1{color:var(--primary);margin-top:0}
+    h2{margin-top:0}
+    .container{max-width:1200px;margin:auto}
+    .card{background:var(--card);padding:20px;border-radius:12px;margin-bottom:20px;border:1px solid var(--line)}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+    input,select,button{width:100%;padding:10px;border-radius:8px;border:none}
+    input,select{margin-top:6px;background:#fff;color:#111827}
+    label{display:block;font-size:14px;color:var(--muted);margin-top:6px}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+    .actions button,.nav button{width:auto}
+    button{background:var(--primary);cursor:pointer;font-weight:700}
+    .danger{background:var(--danger);color:#fff}
+    .export{background:var(--success);color:#fff}
+    .edit{background:var(--warn);color:#111827}
+    .nav{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+    .nav a{text-decoration:none}
+    table{width:100%;border-collapse:collapse;margin-top:12px}
+    th,td{padding:10px;border:1px solid var(--line);text-align:center}
+    th{background:#0b1220}
+    .summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+    .mini{background:#0b1220;border:1px solid var(--line);border-radius:10px;padding:14px}
+    .mini b{display:block;font-size:22px;color:var(--primary);margin-top:4px}
+    .muted{color:var(--muted)}
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="nav">
+    <a href="index.html"><button>📋 Ensayos</button></a>
+    <a href="bitacora.html"><button>📸 Bitácora</button></a>
+    <a href="resultados.html"><button>📊 Resultados</button></a>
+    <a href="pipeline.html"><button>🌱 Pipeline</button></a>
+    <a href="tablero.html"><button>🧠 Tablero</button></a>
+    <a href="inteligencia.html"><button>🚀 Inteligencia</button></a>
+    <a href="innovacion.html"><button>🧬 Innovación</button></a>
+  </div>
+
+  <h1>🚀 Registro de Ensayos - Galera</h1>
+
+  <div class="card">
+    <h2 id="modo">Nuevo Ensayo</h2>
+    <div class="grid">
+      <div><label>Técnico responsable</label><input id="tecnico" placeholder="Ej. Ing. López"></div>
+      <div><label>Región</label><input id="region" placeholder="Ej. Bajío"></div>
+      <div><label>Cultivo</label><input id="cultivo" placeholder="Ej. Tomate"></div>
+      <div><label>Objetivo</label><input id="objetivo" placeholder="Ej. +12% vs control"></div>
+
+      <div><label>Ciclo agrícola</label><input id="ciclo" placeholder="Ej. Otoño-Invierno"></div>
+      <div>
+        <label>Tipo de sistema</label>
+        <select id="sistema">
+          <option value="Campo abierto">Campo abierto</option>
+          <option value="Invernadero">Invernadero</option>
+        </select>
+      </div>
+      <div><label>Tipo de suelo</label><input id="suelo" placeholder="Ej. Franco arenoso"></div>
+      <div><label>Sistema de riego</label><input id="riego" placeholder="Ej. Goteo"></div>
+
+      <div><label>Fecha siembra</label><input type="date" id="siembra"></div>
+      <div><label>Fecha estimada cosecha</label><input type="date" id="cosecha"></div>
+      <div><label>Variedad tratada</label><input id="variedadTratada" placeholder="Ej. Dumas"></div>
+      <div><label>Variedad control</label><input id="variedadControl" placeholder="Ej. Competidor"></div>
+
+      <div><label>Proveedor control</label><input id="proveedor" placeholder="Ej. Proveedor X"></div>
+      <div><label>Superficie ensayo</label><input id="superficie" placeholder="Ej. 0.5 ha"></div>
+      <div><label>Productor</label><input id="productor" placeholder="Ej. Productor Gómez"></div>
+      <div>
+        <label>Estado</label>
+        <select id="estado">
+          <option value="Planeado">Planeado</option>
+          <option value="Activo">Activo</option>
+          <option value="Terminado">Terminado</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button onclick="guardar()">Guardar Ensayo</button>
+      <button class="edit" onclick="cancelarEdicion()" id="btnCancelar" style="display:none;">Cancelar edición</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Resumen rápido</h2>
+    <div class="summary" id="resumen"></div>
+  </div>
+
+  <div class="card">
+    <h2>Ensayos Registrados</h2>
+    <div class="actions">
+      <button class="export" onclick="exportarExcel()">📊 Exportar a Excel</button>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Cultivo</th>
+          <th>Variedad</th>
+          <th>Región</th>
+          <th>Estado</th>
+          <th>Fecha siembra</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="tabla"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  function getData(key){
+    try{ return JSON.parse(localStorage.getItem(key)) || []; }
+    catch(e){ return []; }
+  }
+  function saveData(key, data){
+    localStorage.setItem(key, JSON.stringify(data));
+  }
+  function formatDate(iso){
+    if(!iso) return "";
+    const d = new Date(iso + "T00:00:00");
+    if(isNaN(d)) return iso;
+    return d.toLocaleDateString("es-MX");
+  }
+
+  let ensayos = getData("ensayos");
+  let editId = null;
+
+  function limpiarFormulario(){
+    editId = null;
+    $("modo").innerText = "Nuevo Ensayo";
+    $("btnCancelar").style.display = "none";
+    ["tecnico","region","cultivo","objetivo","ciclo","suelo","riego","siembra","cosecha","variedadTratada","variedadControl","proveedor","superficie","productor"].forEach(id => $(id).value = "");
+    $("sistema").value = "Campo abierto";
+    $("estado").value = "Planeado";
+  }
+
+  function cancelarEdicion(){
+    limpiarFormulario();
+  }
+
+  function editar(id){
+    const e = ensayos.find(x => x.id === id);
+    if(!e) return;
+    editId = id;
+    $("modo").innerText = "Editar Ensayo";
+    $("btnCancelar").style.display = "inline-block";
+
+    $("tecnico").value = e.tecnico || "";
+    $("region").value = e.region || "";
+    $("cultivo").value = e.cultivo || "";
+    $("objetivo").value = e.objetivo || "";
+    $("ciclo").value = e.ciclo || "";
+    $("sistema").value = e.sistema || "Campo abierto";
+    $("suelo").value = e.suelo || "";
+    $("riego").value = e.riego || "";
+    $("siembra").value = e.fecha_siembra || "";
+    $("cosecha").value = e.fecha_cosecha || "";
+    $("variedadTratada").value = e.variedad_tratada || "";
+    $("variedadControl").value = e.variedad_control || "";
+    $("proveedor").value = e.proveedor_control || "";
+    $("superficie").value = e.superficie || "";
+    $("productor").value = e.productor || "";
+    $("estado").value = e.estado || "Planeado";
+    window.scrollTo({top:0, behavior:"smooth"});
+  }
+
+  function guardar(){
+    const nowIso = new Date().toISOString();
+    const ensayo = {
+      id: editId || Date.now(),
+      tecnico: $("tecnico").value.trim(),
+      region: $("region").value.trim(),
+      cultivo: $("cultivo").value.trim(),
+      objetivo: $("objetivo").value.trim(),
+      ciclo: $("ciclo").value.trim(),
+      sistema: $("sistema").value,
+      suelo: $("suelo").value.trim(),
+      riego: $("riego").value.trim(),
+      fecha_siembra: $("siembra").value,
+      fecha_cosecha: $("cosecha").value,
+      variedad_tratada: $("variedadTratada").value.trim(),
+      variedad_control: $("variedadControl").value.trim(),
+      proveedor_control: $("proveedor").value.trim(),
+      superficie: $("superficie").value.trim(),
+      productor: $("productor").value.trim(),
+      estado: $("estado").value,
+      fecha_alta_iso: editId ? (ensayos.find(x => x.id === editId)?.fecha_alta_iso || nowIso) : nowIso,
+      fecha_actualizacion_iso: nowIso
+    };
+
+    if(!ensayo.cultivo || !ensayo.variedad_tratada || !ensayo.region){
+      alert("Captura al menos cultivo, variedad tratada y región.");
+      return;
+    }
+
+    if(editId){
+      ensayos = ensayos.map(x => x.id === editId ? ensayo : x);
+    }else{
+      ensayos.push(ensayo);
+    }
+
+    saveData("ensayos", ensayos);
+    limpiarFormulario();
+    render();
+  }
+
+  function eliminar(id){
+    if(!confirm("¿Eliminar este ensayo?")) return;
+    ensayos = ensayos.filter(e => e.id !== id);
+    saveData("ensayos", ensayos);
+    render();
+  }
+
+  function renderResumen(){
+    const total = ensayos.length;
+    const planeados = ensayos.filter(e => e.estado === "Planeado").length;
+    const activos = ensayos.filter(e => e.estado === "Activo").length;
+    const terminados = ensayos.filter(e => e.estado === "Terminado").length;
+
+    $("resumen").innerHTML = `
+      <div class="mini">Total ensayos<b>${total}</b></div>
+      <div class="mini">Planeados<b>${planeados}</b></div>
+      <div class="mini">Activos<b>${activos}</b></div>
+      <div class="mini">Terminados<b>${terminados}</b></div>
+    `;
+  }
+
+  function render(){
+    const tabla = $("tabla");
+    tabla.innerHTML = "";
+
+    ensayos
+      .slice()
+      .sort((a,b) => (b.fecha_alta_iso || "").localeCompare(a.fecha_alta_iso || ""))
+      .forEach(e => {
+        tabla.innerHTML += `
+          <tr>
+            <td>${e.id}</td>
+            <td>${e.cultivo || ""}</td>
+            <td>${e.variedad_tratada || ""}</td>
+            <td>${e.region || ""}</td>
+            <td>${e.estado || ""}</td>
+            <td>${formatDate(e.fecha_siembra)}</td>
+            <td>
+              <div class="actions" style="justify-content:center;">
+                <button class="edit" onclick="editar(${e.id})">Editar</button>
+                <button class="danger" onclick="eliminar(${e.id})">Eliminar</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      });
+
+    renderResumen();
+  }
+
+  function exportarExcel(){
+    const data = ensayos.map(e => ({
+      "ID Ensayo": e.id,
+      "Técnico": e.tecnico,
+      "Región": e.region,
+      "Cultivo": e.cultivo,
+      "Objetivo": e.objetivo,
+      "Ciclo": e.ciclo,
+      "Sistema": e.sistema,
+      "Suelo": e.suelo,
+      "Riego": e.riego,
+      "Fecha Siembra": e.fecha_siembra,
+      "Fecha Cosecha": e.fecha_cosecha,
+      "Variedad Tratada": e.variedad_tratada,
+      "Variedad Control": e.variedad_control,
+      "Proveedor Control": e.proveedor_control,
+      "Superficie": e.superficie,
+      "Productor": e.productor,
+      "Estado": e.estado,
+      "Fecha Alta ISO": e.fecha_alta_iso || "",
+      "Fecha Actualización ISO": e.fecha_actualizacion_iso || ""
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Ensayos");
+    XLSX.writeFile(wb, "Ensayos_Galera_Ajustado.xlsx");
+  }
+
+  render();
+</script>
+</body>
+</html>
+```
+
+# bitacora.html
+
+```html
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Bitácora de Ensayos</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <style>
+    :root{
+      --bg:#0f172a; --card:#1e293b; --line:#334155; --text:#e2e8f0;
+      --muted:#94a3b8; --primary:#38bdf8; --danger:#ef4444; --success:#22c55e; --warn:#f59e0b;
+    }
+    *{box-sizing:border-box}
+    body{font-family:Arial,sans-serif;background:var(--bg);color:var(--text);padding:20px}
+    h1{color:var(--primary);margin-top:0}
+    .container{max-width:1200px;margin:auto}
+    .card{background:var(--card);padding:20px;border-radius:12px;margin-bottom:20px;border:1px solid var(--line)}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+    input,select,button,textarea{width:100%;padding:10px;border-radius:8px;border:none}
+    input,select,textarea{margin-top:6px;background:#fff;color:#111827}
+    label{display:block;font-size:14px;color:var(--muted);margin-top:6px}
+    button{background:var(--primary);cursor:pointer;font-weight:700}
+    .nav{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+    .nav a{text-decoration:none}
+    .nav button{width:auto}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+    .actions button{width:auto}
+    .export{background:var(--success);color:#fff}
+    .edit{background:var(--warn);color:#111827}
+    .delete{background:var(--danger);color:#fff}
+    #map{height:320px;border-radius:12px;border:1px solid var(--line);margin-top:10px}
+    img{max-width:100%;border-radius:10px;margin-top:10px;border:1px solid var(--line)}
+    .timeline-item{background:#0b1220;border:1px solid var(--line);border-radius:12px;padding:16px;margin-top:12px}
+    .muted{color:var(--muted)}
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="nav">
+    <a href="index.html"><button>📋 Ensayos</button></a>
+    <a href="bitacora.html"><button>📸 Bitácora</button></a>
+    <a href="resultados.html"><button>📊 Resultados</button></a>
+    <a href="pipeline.html"><button>🌱 Pipeline</button></a>
+    <a href="tablero.html"><button>🧠 Tablero</button></a>
+    <a href="inteligencia.html"><button>🚀 Inteligencia</button></a>
+    <a href="innovacion.html"><button>🧬 Innovación</button></a>
+  </div>
+
+  <h1>📸 Bitácora de Ensayos</h1>
+
+  <div class="card">
+    <h2 id="modo">Nuevo Registro</h2>
+    <div class="grid">
+      <div>
+        <label>Ensayo</label>
+        <select id="ensayoSelect"></select>
+      </div>
+      <div>
+        <label>Responsable</label>
+        <input id="responsable" placeholder="Ej. Ing. López">
+      </div>
+      <div>
+        <label>Etapa</label>
+        <select id="etapa">
+          <option value="Siembra">Siembra</option>
+          <option value="Desarrollo">Desarrollo</option>
+          <option value="Cosecha">Cosecha</option>
+        </select>
+      </div>
+      <div>
+        <label>Foto</label>
+        <input type="file" id="foto" accept="image/*">
+      </div>
+    </div>
+
+    <label>Observación</label>
+    <textarea id="comentario" rows="4" placeholder="Describe el avance, hallazgos o incidencia observada..."></textarea>
+
+    <label>Ubicación en mapa</label>
+    <div id="map"></div>
+    <p id="coords" class="muted"></p>
+
+    <div class="actions">
+      <button onclick="guardarBitacora()">Guardar registro</button>
+      <button class="edit" id="btnCancelar" onclick="cancelarEdicion()" style="display:none;">Cancelar edición</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Filtrar Timeline</h2>
+    <div class="grid">
+      <div>
+        <label>Ensayo</label>
+        <select id="filtroEnsayo"></select>
+      </div>
+      <div>
+        <label>Etapa</label>
+        <select id="filtroEtapa">
+          <option value="">Todas</option>
+          <option value="Siembra">Siembra</option>
+          <option value="Desarrollo">Desarrollo</option>
+          <option value="Cosecha">Cosecha</option>
+        </select>
+      </div>
+    </div>
+    <div class="actions">
+      <button onclick="render()">Aplicar filtros</button>
+      <button class="export" onclick="exportarExcel()">📊 Exportar Excel</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Timeline</h2>
+    <div id="timeline"></div>
+  </div>
+</div>
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  function getData(key){
+    try{ return JSON.parse(localStorage.getItem(key)) || []; }
+    catch(e){ return []; }
+  }
+  function saveData(key, data){
+    localStorage.setItem(key, JSON.stringify(data));
+  }
+  function formatDateTime(iso){
+    if(!iso) return "";
+    const d = new Date(iso);
+    if(isNaN(d)) return iso;
+    return d.toLocaleString("es-MX");
+  }
+
+  let ensayos = getData("ensayos");
+  let bitacora = getData("bitacora");
+  let editId = null;
+  let lat = null, lng = null, marker = null;
+
+  function ensayoLabel(e){
+    return `${e.id} | ${e.cultivo || ""} | ${e.variedad_tratada || ""} | ${e.productor || ""}`;
+  }
+
+  function cargarEnsayos(){
+    $("ensayoSelect").innerHTML = "";
+    $("filtroEnsayo").innerHTML = '<option value="">Todos los ensayos</option>';
+
+    ensayos.forEach(e => {
+      $("ensayoSelect").innerHTML += `<option value="${e.id}">${ensayoLabel(e)}</option>`;
+      $("filtroEnsayo").innerHTML += `<option value="${e.id}">${ensayoLabel(e)}</option>`;
+    });
+  }
+
+  const map = L.map('map').setView([23.6,-102.5],5);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+
+  map.on('click', function(e){
+    lat = e.latlng.lat;
+    lng = e.latlng.lng;
+
+    if(marker) map.removeLayer(marker);
+    marker = L.marker([lat,lng]).addTo(map);
+    $("coords").innerText = `Lat: ${lat.toFixed(5)} | Lng: ${lng.toFixed(5)}`;
+  });
+
+  function limpiarMapa(){
+    lat = null;
+    lng = null;
+    $("coords").innerText = "";
+    if(marker){
+      map.removeLayer(marker);
+      marker = null;
+    }
+  }
+
+  function limpiarFormulario(){
+    editId = null;
+    $("modo").innerText = "Nuevo Registro";
+    $("btnCancelar").style.display = "none";
+    $("responsable").value = "";
+    $("comentario").value = "";
+    $("foto").value = "";
+    $("etapa").value = "Siembra";
+    limpiarMapa();
+  }
+
+  function cancelarEdicion(){
+    limpiarFormulario();
+  }
+
+  function guardarBitacora(){
+    if(!$("ensayoSelect").value){
+      alert("Selecciona un ensayo.");
+      return;
+    }
+    if(!$("responsable").value.trim()){
+      alert("Captura el responsable.");
+      return;
+    }
+
+    const file = $("foto").files[0];
+    if(file){
+      const reader = new FileReader();
+      reader.onload = () => guardarRegistro(reader.result);
+      reader.readAsDataURL(file);
+    }else{
+      const existing = editId ? bitacora.find(b => b.id === editId)?.foto || null : null;
+      guardarRegistro(existing);
+    }
+  }
+
+  function guardarRegistro(fotoBase64){
+    const nowIso = new Date().toISOString();
+    const registro = {
+      id: editId || Date.now(),
+      ensayo_id: $("ensayoSelect").value,
+      responsable: $("responsable").value.trim(),
+      etapa: $("etapa").value,
+      comentario: $("comentario").value.trim(),
+      foto: fotoBase64 || null,
+      lat: lat,
+      lng: lng,
+      fechaISO: editId ? (bitacora.find(b => b.id === editId)?.fechaISO || nowIso) : nowIso,
+      fechaActualizacionISO: nowIso
+    };
+
+    if(editId){
+      bitacora = bitacora.map(b => b.id === editId ? registro : b);
+    }else{
+      bitacora.push(registro);
+    }
+
+    saveData("bitacora", bitacora);
+    limpiarFormulario();
+    render();
+  }
+
+  function editar(id){
+    const b = bitacora.find(x => x.id === id);
+    if(!b) return;
+
+    editId = id;
+    $("modo").innerText = "Editar Registro";
+    $("btnCancelar").style.display = "inline-block";
+    $("ensayoSelect").value = b.ensayo_id;
+    $("responsable").value = b.responsable || "";
+    $("etapa").value = b.etapa || "Siembra";
+    $("comentario").value = b.comentario || "";
+
+    limpiarMapa();
+    lat = typeof b.lat === "number" ? b.lat : null;
+    lng = typeof b.lng === "number" ? b.lng : null;
+
+    if(lat !== null && lng !== null){
+      marker = L.marker([lat,lng]).addTo(map);
+      map.setView([lat,lng], 12);
+      $("coords").innerText = `Lat: ${lat.toFixed(5)} | Lng: ${lng.toFixed(5)}`;
+    }
+
+    window.scrollTo({top:0, behavior:"smooth"});
+  }
+
+  function eliminar(id){
+    if(!confirm("¿Eliminar este registro de bitácora?")) return;
+    bitacora = bitacora.filter(b => b.id !== id);
+    saveData("bitacora", bitacora);
+    render();
+  }
+
+  function render(){
+    const ensayoFiltro = $("filtroEnsayo").value;
+    const etapaFiltro = $("filtroEtapa").value;
+
+    let lista = bitacora.slice();
+    if(ensayoFiltro) lista = lista.filter(b => String(b.ensayo_id) === String(ensayoFiltro));
+    if(etapaFiltro) lista = lista.filter(b => b.etapa === etapaFiltro);
+
+    lista.sort((a,b) => String(b.fechaISO || "").localeCompare(String(a.fechaISO || "")));
+
+    $("timeline").innerHTML = lista.length ? "" : `<p class="muted">No hay registros para los filtros seleccionados.</p>`;
+
+    lista.forEach(b => {
+      const e = ensayos.find(x => String(x.id) === String(b.ensayo_id)) || {};
+      $("timeline").innerHTML += `
+        <div class="timeline-item">
+          <h3>${ensayoLabel(e)}</h3>
+          <p><b>Responsable:</b> ${b.responsable || ""}</p>
+          <p><b>Etapa:</b> ${b.etapa || ""}</p>
+          <p><b>Fecha:</b> ${formatDateTime(b.fechaActualizacionISO || b.fechaISO)}</p>
+          <p>${b.comentario || ""}</p>
+          ${typeof b.lat === "number" && typeof b.lng === "number" ? `<p class="muted">Lat: ${b.lat.toFixed(5)} | Lng: ${b.lng.toFixed(5)}</p>` : ""}
+          ${b.foto ? `<img src="${b.foto}" alt="Foto evidencia">` : ""}
+          <div class="actions">
+            <button class="edit" onclick="editar(${b.id})">Editar</button>
+            <button class="delete" onclick="eliminar(${b.id})">Eliminar</button>
+          </div>
+        </div>
+      `;
+    });
+  }
+
+  function exportarExcel(){
+    const data = bitacora.map(b => {
+      const e = ensayos.find(x => String(x.id) === String(b.ensayo_id)) || {};
+      return {
+        "ID Ensayo": b.ensayo_id,
+        "Cultivo": e.cultivo || "",
+        "Variedad": e.variedad_tratada || "",
+        "Productor": e.productor || "",
+        "Responsable": b.responsable,
+        "Etapa": b.etapa,
+        "Comentario": b.comentario,
+        "Lat": typeof b.lat === "number" ? b.lat : "",
+        "Lng": typeof b.lng === "number" ? b.lng : "",
+        "Fecha ISO": b.fechaISO || "",
+        "Última actualización ISO": b.fechaActualizacionISO || ""
+      };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Bitacora");
+    XLSX.writeFile(wb, "Bitacora_Galera_Ajustada.xlsx");
+  }
+
+  cargarEnsayos();
+  render();
+</script>
+</body>
+</html>
+```
+
+# resultados.html
+
+```html
+PÉGAME EN EL CHAT SI QUIERES ESTE ARCHIVO COMPLETO Y TE LO DOY EN EL SIGUIENTE MENSAJE.
+```
+
+# pipeline.html
+
+```html
+PÉGAME EN EL CHAT SI QUIERES ESTE ARCHIVO COMPLETO Y TE LO DOY EN EL SIGUIENTE MENSAJE.
+```
+
+# tablero.html
+
+```html
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Tablero Operativo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root{
+      --bg:#0f172a; --card:#1e293b; --line:#334155; --text:#e2e8f0;
+      --muted:#94a3b8; --primary:#38bdf8; --danger:#ef4444; --success:#22c55e; --warn:#facc15;
+    }
+    *{box-sizing:border-box}
+    body{font-family:Arial,sans-serif;background:var(--bg);color:var(--text);padding:20px}
+    h1{color:var(--primary);margin-top:0}
+    .container{max-width:1200px;margin:auto}
+    .card{background:var(--card);padding:20px;border-radius:12px;margin-bottom:20px;border:1px solid var(--line)}
+    .nav{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+    .nav a{text-decoration:none}
+    button{padding:10px;border-radius:8px;border:none;background:var(--primary);cursor:pointer;font-weight:700}
+    .kpi{font-size:18px;margin:8px 0}
+    .green{color:#22c55e}
+    .red{color:#ef4444}
+    .yellow{color:#facc15}
+    .muted{color:var(--muted)}
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="nav">
+    <a href="index.html"><button>📋 Ensayos</button></a>
+    <a href="bitacora.html"><button>📸 Bitácora</button></a>
+    <a href="resultados.html"><button>📊 Resultados</button></a>
+    <a href="pipeline.html"><button>🌱 Pipeline</button></a>
+    <a href="tablero.html"><button>🧠 Tablero</button></a>
+    <a href="inteligencia.html"><button>🚀 Inteligencia</button></a>
+    <a href="innovacion.html"><button>🧬 Innovación</button></a>
+  </div>
+
+  <h1>🧠 Tablero Operativo</h1>
+
+  <div class="card">
+    <h2>🔬 KPIs Técnicos</h2>
+    <div id="kpiTecnico"></div>
+  </div>
+
+  <div class="card">
+    <h2>💰 KPIs Comerciales</h2>
+    <div id="kpiComercial"></div>
+  </div>
+
+  <div class="card">
+    <h2>🚀 KPIs Estratégicos</h2>
+    <div id="kpiEstrategico"></div>
+  </div>
+</div>
+
+<script>
+  function getData(key){
+    try{ return JSON.parse(localStorage.getItem(key)) || []; }
+    catch(e){ return []; }
+  }
+  const money = n => "$" + new Intl.NumberFormat("es-MX", {minimumFractionDigits:2, maximumFractionDigits:2}).format(Number(n || 0));
+  const pct = n => new Intl.NumberFormat("es-MX", {minimumFractionDigits:2, maximumFractionDigits:2}).format(Number(n || 0)) + "%";
+  const num = n => new Intl.NumberFormat("es-MX", {maximumFractionDigits:2}).format(Number(n || 0));
+
+  let ensayos = getData("ensayos");
+  let resultados = getData("resultados");
+  let oportunidades = getData("oportunidades");
+
+  function latestResultadosMap(){
+    const map = {};
+    resultados.forEach(r => {
+      const key = String(r.ensayo_id);
+      if(!map[key]){
+        map[key] = r;
+      }else{
+        const current = map[key];
+        if(String(r.fechaISO || r.id || "") > String(current.fechaISO || current.id || "")){
+          map[key] = r;
+        }
+      }
+    });
+    return map;
+  }
+
+  function earliestClosedSaleDate(ensayoId){
+    const lista = oportunidades
+      .filter(o => String(o.ensayo) === String(ensayoId) && Number(o.ventaCerrada || 0) > 0)
+      .map(o => o.fechaVentaCerrada || (o.fechaRegistroISO ? o.fechaRegistroISO.slice(0,10) : ""))
+      .filter(Boolean)
+      .sort();
+    return lista[0] || "";
+  }
+
+  function daysBetween(startISO, endISO){
+    if(!startISO || !endISO) return null;
+    const start = new Date(startISO + "T00:00:00");
+    const end = new Date(endISO + "T00:00:00");
+    if(isNaN(start) || isNaN(end)) return null;
+    const diff = Math.round((end - start) / (1000 * 60 * 60 * 24));
+    return diff >= 0 ? diff : null;
+  }
+
+  function calcularTecnicos(){
+    const total = ensayos.length;
+    const planeados = ensayos.filter(e => e.estado === "Planeado").length;
+    const activos = ensayos.filter(e => e.estado === "Activo").length;
+    const terminados = ensayos.filter(e => e.estado === "Terminado").length;
+
+    const resultadosMap = latestResultadosMap();
+    const listaResultados = Object.values(resultadosMap);
+
+    const rendPromTratado = listaResultados.length
+      ? listaResultados.reduce((a,b) => a + Number(b.rendTratado || 0), 0) / listaResultados.length
+      : 0;
+
+    const mejoraProm = listaResultados.length
+      ? listaResultados.reduce((a,b) => a + Number(b.porcentaje || 0), 0) / listaResultados.length
+      : 0;
+
+    document.getElementById("kpiTecnico").innerHTML = `
+      <div class="kpi">% Ensayos activos: <b>${total ? pct((activos / total) * 100) : "0.00%"}</b></div>
+      <div class="kpi">Planeados / Activos / Terminados: <b>${planeados} / ${activos} / ${terminados}</b></div>
+      <div class="kpi">🌾 Rendimiento promedio tratado: <b>${num(rendPromTratado)} ton/ha</b></div>
+      <div class="kpi">📈 Mejora promedio vs control: <b>${pct(mejoraProm)}</b></div>
+    `;
+  }
+
+  function calcularComerciales(){
+    const ensayosTot = ensayos.length || 0;
+
+    const ensayosConVenta = ensayos.filter(e => {
+      const totalVenta = oportunidades
+        .filter(o => String(o.ensayo) === String(e.id))
+        .reduce((a,b) => a + Number(b.ventaCerrada || 0), 0);
+      return totalVenta > 0;
+    }).length;
+
+    const conversion = ensayosTot ? (ensayosConVenta / ensayosTot) * 100 : 0;
+    const totalLeads = oportunidades.reduce((a,b) => a + Number(b.leads || 0), 0);
+    const leadsPorEnsayo = ensayosTot ? totalLeads / ensayosTot : 0;
+
+    const listaResultados = Object.values(latestResultadosMap());
+    const roiProm = listaResultados.length
+      ? listaResultados.reduce((a,b) => a + Number(b.roi || 0), 0) / listaResultados.length
+      : 0;
+
+    const roiClass = roiProm >= 0.3 ? "green" : roiProm >= 0 ? "yellow" : "red";
+    const convClass = conversion >= 25 ? "green" : conversion >= 10 ? "yellow" : "red";
+
+    document.getElementById("kpiComercial").innerHTML = `
+      <div class="kpi ${convClass}">📈 Ensayo → Venta: <b>${pct(conversion)}</b></div>
+      <div class="kpi">📊 Leads por ensayo: <b>${num(leadsPorEnsayo)}</b></div>
+      <div class="kpi ${roiClass}">💰 ROI promedio: <b>${pct(roiProm * 100)}</b></div>
+      <div class="kpi">💵 Venta cerrada acumulada: <b>${money(oportunidades.reduce((a,b) => a + Number(b.ventaCerrada || 0), 0))}</b></div>
+    `;
+  }
+
+  function calcularEstrategicos(){
+    const adopcion = oportunidades.reduce((a,b) => a + Number(b.ventaCerrada || 0), 0);
+
+    const speedValues = ensayos
+      .map(e => daysBetween(e.fecha_siembra, earliestClosedSaleDate(e.id)))
+      .filter(v => v !== null);
+
+    const speedProm = speedValues.length
+      ? speedValues.reduce((a,b) => a + b, 0) / speedValues.length
+      : 0;
+
+    const speedClass = speedValues.length === 0 ? "" : speedProm <= 90 ? "green" : speedProm <= 180 ? "yellow" : "red";
+
+    const porCultivo = {};
+    Object.values(latestResultadosMap()).forEach(r => {
+      const e = ensayos.find(x => String(x.id) === String(r.ensayo_id));
+      if(!e || !e.cultivo) return;
+      if(!porCultivo[e.cultivo]) porCultivo[e.cultivo] = [];
+      porCultivo[e.cultivo].push(Number(r.roi || 0));
+    });
+
+    const textoCultivos = Object.entries(porCultivo).length
+      ? Object.entries(porCultivo)
+          .map(([cultivo, rois]) => {
+            const avg = rois.reduce((a,b) => a + b, 0) / rois.length;
+            const cls = avg >= 0.3 ? "green" : avg >= 0 ? "yellow" : "red";
+            return `<div class="kpi ${cls}">${cultivo}: <b>${pct(avg * 100)}</b></div>`;
+          }).join("")
+      : `<p class="muted">Aún no hay resultados por cultivo.</p>`;
+
+    document.getElementById("kpiEstrategico").innerHTML = `
+      <div class="kpi">🌱 Adopción varietal (ventas cerradas): <b>${money(adopcion)}</b></div>
+      <div class="kpi ${speedClass}">⏱ Speed to Market promedio: <b>${speedValues.length ? num(speedProm) + " días" : "Sin datos suficientes"}</b></div>
+      <div class="kpi muted">Basado en ensayos con fecha de siembra y primera venta cerrada registrada.</div>
+      <hr>
+      <div class="kpi"><b>📊 ROI promedio por cultivo</b></div>
+      ${textoCultivos}
+    `;
+  }
+
+  calcularTecnicos();
+  calcularComerciales();
+  calcularEstrategicos();
+</script>
+</body>
+</html>
+```
+
+# inteligencia.html
+
+```html
+PÉGAME EN EL CHAT SI QUIERES ESTE ARCHIVO COMPLETO Y TE LO DOY EN EL SIGUIENTE MENSAJE.
+```
+
+# innovacion.html
+
+```html
+PÉGAME EN EL CHAT SI QUIERES ESTE ARCHIVO COMPLETO Y TE LO DOY EN EL SIGUIENTE MENSAJE.
+```
+
+# README.md
+
+```md
+PÉGAME EN EL CHAT SI QUIERES ESTE ARCHIVO COMPLETO Y TE LO DOY EN EL SIGUIENTE MENSAJE.
+```
