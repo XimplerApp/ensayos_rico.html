@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Pipeline Comercial de Ensayos - Galera</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    :root{
+      --bg:#0f172a;
+      --card:#1e293b;
+      --line:#334155;
+      --text:#e2e8f0;
+      --muted:#94a3b8;
+      --primary:#38bdf8;
+      --danger:#ef4444;
+      --success:#22c55e;
+      --warn:#f59e0b;
+      --yellow:#facc15;
+    }
+    *{box-sizing:border-box}
+    body{
+      font-family:Arial,sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      padding:20px;
+    }
+    h1{color:var(--primary);margin-top:0}
+    h2,h3{margin-top:0}
+    .container{max-width:1200px;margin:auto}
+    .card{
+      background:var(--card);
+      padding:20px;
+      border-radius:12px;
+      margin-bottom:20px;
+      border:1px solid var(--line);
+    }
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+      gap:12px;
+    }
+    label{
+      display:block;
+      font-size:14px;
+      color:var(--muted);
+      margin-top:6px;
+    }
+    input,select,button{
+      width:100%;
+      padding:10px;
+      border-radius:8px;
+      border:none;
+    }
+    input,select{
+      margin-top:6px;
+      background:#fff;
+      color:#111827;
+    }
+    button{
+      background:var(--primary);
+      cursor:pointer;
+      font-weight:700;
+    }
+    .save{background:var(--success);color:#fff}
+    .delete{background:var(--danger);color:#fff}
+    .edit{background:var(--warn);color:#111827}
+    .export{background:var(--success);color:#fff}
+    .nav{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:20px;
+    }
+    .nav a{text-decoration:none}
+    .nav button,.actions button{width:auto}
+    .actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:14px;
+    }
+    .summary{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+      gap:12px;
+      margin-top:14px;
+    }
+    .mini{
+      background:#0b1220;
+      border:1px solid var(--line);
+      border-radius:10px;
+      padding:14px;
+    }
+    .mini span{
+      display:block;
+      color:var(--muted);
+      font-size:13px;
+      margin-bottom:6px;
+    }
+    .mini b{
+      font-size:22px;
+      color:var(--primary);
+    }
+    .kpi{
+      font-size:18px;
+      margin:8px 0;
+      line-height:1.4;
+    }
+    .green{color:var(--success)}
+    .red{color:var(--danger)}
+    .yellow{color:var(--yellow)}
+    .muted{color:var(--muted)}
+    table{
+      width:100%;
+      border-collapse:collapse;
+      margin-top:12px;
+    }
+    th,td{
+      padding:10px;
+      border:1px solid var(--line);
+      text-align:center;
+      vertical-align:middle;
+    }
+    th{background:#0b1220}
+    .nowrap{white-space:nowrap}
+    hr{
+      border:none;
+      border-top:1px solid var(--line);
+      margin:14px 0;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <div class="nav">
+    <a href="index.html"><button>📋 Ensayos</button></a>
+    <a href="bitacora.html"><button>📸 Bitácora</button></a>
+    <a href="resultados.html"><button>📊 Resultados</button></a>
+    <a href="pipeline.html"><button>🌱 Pipeline</button></a>
+    <a href="tablero.html"><button>🧠 Tablero</button></a>
+    <a href="inteligencia.html"><button>🚀 Inteligencia</button></a>
+    <a href="innovacion.html"><button>🧬 Innovación</button></a>
+  </div>
+
+  <h1>🌱 Pipeline Comercial de Ensayos</h1>
+
+  <div class="card">
+    <h2>📊 Dashboard del Pipeline</h2>
+
+    <div class="grid">
+      <div>
+        <label>Filtrar por ensayo</label>
+        <select id="filtroEnsayo"></select>
+      </div>
+    </div>
+
+    <div id="dashboard" style="margin-top:10px;"></div>
+    <div class="summary" id="resumenMini"></div>
+  </div>
+
+  <div class="card">
+    <h2 id="modo">Nueva Oportunidad Comercial</h2>
+
+    <div class="grid">
+      <div>
+        <label>Ensayo</label>
+        <select id="idEnsayo"></select>
+      </div>
+
+      <div>
+        <label>Fecha de registro</label>
+        <input type="date" id="fechaRegistro">
+      </div>
+
+      <div>
+        <label>Productor interesado</label>
+        <select id="interesado">
+          <option value="Sí">Sí</option>
+          <option value="No">No</option>
+        </select>
+      </div>
+
+      <div>
+        <label>Etapa comercial</label>
+        <select id="etapa">
+          <option value="Lead">Lead</option>
+          <option value="Contactado">Contactado</option>
+          <option value="Cotización">Cotización</option>
+          <option value="Negociación">Negociación</option>
+          <option value="Venta">Venta</option>
+          <option value="Recompra">Recompra</option>
+        </select>
+      </div>
+
+      <div>
+        <label>Área potencial (ha)</label>
+        <input id="area" placeholder="Ej. 12.5">
+      </div>
+
+      <div>
+        <label>Leads generados</label>
+        <input id="leads" placeholder="Ej. 8">
+      </div>
+
+      <div>
+        <label>Venta estimada $</label>
+        <input id="ventaEstimada" placeholder="Ej. 250000">
+      </div>
+
+      <div>
+        <label>Venta cerrada $</label>
+        <input id="ventaCerrada" placeholder="Ej. 80000">
+      </div>
+
+      <div>
+        <label>Fecha venta cerrada</label>
+        <input type="date" id="fechaVentaCerrada">
+      </div>
+
+      <div>
+        <label>¿Recompra?</label>
+        <select id="recompra">
+          <option value="No">No</option>
+          <option value="Sí">Sí</option>
+        </select>
+      </div>
+
+      <div>
+        <label>Responsable comercial</label>
+        <input id="responsableComercial" placeholder="Ej. Ing. García">
+      </div>
+
+      <div>
+        <label>Próximo paso</label>
+        <input id="proximoPaso" placeholder="Ej. Visita técnica / Cotización">
+      </div>
+    </div>
+
+    <div class="actions">
+      <button onclick="guardar()">Guardar oportunidad</button>
+      <button class="edit" id="btnCancelar" onclick="cancelarEdicion()" style="display:none;">Cancelar edición</button>
+      <button class="export" onclick="exportarExcel()">📊 Exportar Excel</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📋 Oportunidades Guardadas</h2>
+    <table id="tabla"></table>
+  </div>
+
+</div>
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  function getData(key){
+    try { return JSON.parse(localStorage.getItem(key)) || []; }
+    catch(e){ return []; }
+  }
+
+  function saveData(key, data){
+    localStorage.setItem(key, JSON.stringify(data));
+  }
+
+  function ensayoLabel(e){
+    return `${e.id} | ${e.cultivo || ""} | ${e.variedad_tratada || ""} | ${e.productor || ""}`;
+  }
+
+  function formatMoney(n){
+    return "$" + new Intl.NumberFormat("es-MX", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(Number(n || 0));
+  }
+
+  function formatPct(n){
+    return new Intl.NumberFormat("es-MX", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(Number(n || 0)) + "%";
+  }
+
+  function formatNum(n){
+    return new Intl.NumberFormat("es-MX", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(Number(n || 0));
+  }
+
+  function formatDate(iso){
+    if(!iso) return "";
+    const d = new Date(iso + "T00:00:00");
+    if(isNaN(d)) return iso;
+    return d.toLocaleDateString("es-MX");
+  }
+
+  function parseNumber(value){
+    if(value === null || value === undefined) return 0;
+    const clean = String(value).trim().replace(/,/g, "");
+    const num = parseFloat(clean);
+    return isNaN(num) ? 0 : num;
+  }
+
+  function todayISO(){
+    return new Date().toISOString().slice(0,10);
+  }
+
+  let ensayos = getData("ensayos");
+  let oportunidades = getData("oportunidades");
+  let editId = null;
+
+  function cargarEnsayos(){
+    $("idEnsayo").innerHTML = "";
+    $("filtroEnsayo").innerHTML = `<option value="">Todos los ensayos</option>`;
+
+    ensayos.forEach(e => {
+      $("idEnsayo").innerHTML += `<option value="${e.id}">${ensayoLabel(e)}</option>`;
+      $("filtroEnsayo").innerHTML += `<option value="${e.id}">${ensayoLabel(e)}</option>`;
+    });
+  }
+
+  function limpiarFormulario(){
+    editId = null;
+    $("modo").innerText = "Nueva Oportunidad Comercial";
+    $("btnCancelar").style.display = "none";
+
+    $("fechaRegistro").value = todayISO();
+    $("interesado").value = "Sí";
+    $("etapa").value = "Lead";
+    $("area").value = "";
+    $("leads").value = "";
+    $("ventaEstimada").value = "";
+    $("ventaCerrada").value = "";
+    $("fechaVentaCerrada").value = "";
+    $("recompra").value = "No";
+    $("responsableComercial").value = "";
+    $("proximoPaso").value = "";
+  }
+
+  function cancelarEdicion(){
+    limpiarFormulario();
+  }
+
+  function guardar(){
+    if(!$("idEnsayo").value){
+      alert("Selecciona un ensayo.");
+      return;
+    }
+
+    const ventaCerradaVal = parseNumber($("ventaCerrada").value);
+    let fechaVenta = $("fechaVentaCerrada").value;
+
+    if(ventaCerradaVal > 0 && !fechaVenta){
+      fechaVenta = $("fechaRegistro").value || todayISO();
+    }
+
+    const nowIso = new Date().toISOString();
+
+    const data = {
+      id: editId || Date.now(),
+      ensayo: $("idEnsayo").value,
+      fechaRegistro: $("fechaRegistro").value || todayISO(),
+      fechaRegistroISO: editId
+        ? (oportunidades.find(o => o.id === editId)?.fechaRegistroISO || nowIso)
+        : nowIso,
+      fechaActualizacionISO: nowIso,
+      interesado: $("interesado").value,
+      etapa: $("etapa").value,
+      area: parseNumber($("area").value),
+      leads: parseNumber($("leads").value),
+      ventaEstimada: parseNumber($("ventaEstimada").value),
+      ventaCerrada: ventaCerradaVal,
+      fechaVentaCerrada: fechaVenta || "",
+      recompra: $("recompra").value,
+      responsableComercial: $("responsableComercial").value.trim(),
+      proximoPaso: $("proximoPaso").value.trim()
+    };
+
+    if(editId){
+      oportunidades = oportunidades.map(o => o.id === editId ? data : o);
+    } else {
+      oportunidades.push(data);
+    }
+
+    saveData("oportunidades", oportunidades);
+    limpiarFormulario();
+    render();
+  }
+
+  function editar(id){
+    const o = oportunidades.find(x => x.id === id);
+    if(!o) return;
+
+    editId = id;
+    $("modo").innerText = "Editar Oportunidad Comercial";
+    $("btnCancelar").style.display = "inline-block";
+
+    $("idEnsayo").value = o.ensayo;
+    $("fechaRegistro").value = o.fechaRegistro || todayISO();
+    $("interesado").value = o.interesado || "Sí";
+    $("etapa").value = o.etapa || "Lead";
+    $("area").value = o.area ?? "";
+    $("leads").value = o.leads ?? "";
+    $("ventaEstimada").value = o.ventaEstimada ?? "";
+    $("ventaCerrada").value = o.ventaCerrada ?? "";
+    $("fechaVentaCerrada").value = o.fechaVentaCerrada || "";
+    $("recompra").value = o.recompra || "No";
+    $("responsableComercial").value = o.responsableComercial || "";
+    $("proximoPaso").value = o.proximoPaso || "";
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function eliminar(id){
+    if(!confirm("¿Eliminar esta oportunidad?")) return;
+    oportunidades = oportunidades.filter(o => o.id !== id);
+    saveData("oportunidades", oportunidades);
+    render();
+  }
+
+  function getFilteredList(){
+    const filtro = $("filtroEnsayo").value;
+    let lista = oportunidades.slice();
+
+    if(filtro){
+      lista = lista.filter(o => String(o.ensayo) === String(filtro));
+    }
+
+    return lista;
+  }
+
+  function calcularDashboard(){
+    const lista = getFilteredList();
+
+    const productores = lista.filter(o => o.interesado === "Sí").length;
+    const leadsTotal = lista.reduce((a,b) => a + Number(b.leads || 0), 0);
+    const areaTotal = lista.reduce((a,b) => a + Number(b.area || 0), 0);
+    const estimado = lista.reduce((a,b) => a + Number(b.ventaEstimada || 0), 0);
+    const ventas = lista.reduce((a,b) => a + Number(b.ventaCerrada || 0), 0);
+
+    const conversionValor = estimado > 0 ? (ventas / estimado) * 100 : 0;
+    const oportunidadesConVenta = lista.filter(o => Number(o.ventaCerrada || 0) > 0).length;
+    const conversionRegistros = lista.length ? (oportunidadesConVenta / lista.length) * 100 : 0;
+    const recompraCount = lista.filter(o => o.recompra === "Sí").length;
+
+    const claseValor = conversionValor >= 25 ? "green" : conversionValor >= 10 ? "yellow" : "red";
+    const claseRegistros = conversionRegistros >= 25 ? "green" : conversionRegistros >= 10 ? "yellow" : "red";
+
+    $("dashboard").innerHTML = `
+      <div class="kpi">👨‍🌾 Productores interesados: <b>${productores}</b></div>
+      <div class="kpi">📊 Leads generados: <b>${formatNum(leadsTotal)}</b></div>
+      <div class="kpi">🌱 Área potencial: <b>${formatNum(areaTotal)} ha</b></div>
+      <div class="kpi">💰 Venta estimada: <b>${formatMoney(estimado)}</b></div>
+      <div class="kpi">💵 Venta cerrada: <b>${formatMoney(ventas)}</b></div>
+      <div class="kpi ${claseValor}">📈 Conversión por valor: <b>${formatPct(conversionValor)}</b></div>
+      <div class="kpi ${claseRegistros}">🧩 Conversión de registros con venta: <b>${formatPct(conversionRegistros)}</b></div>
+      <div class="kpi">🔁 Registros con recompra: <b>${recompraCount}</b></div>
+    `;
+
+    $("resumenMini").innerHTML = `
+      <div class="mini"><span>Productores interesados</span><b>${productores}</b></div>
+      <div class="mini"><span>Leads</span><b>${formatNum(leadsTotal)}</b></div>
+      <div class="mini"><span>Área potencial (ha)</span><b>${formatNum(areaTotal)}</b></div>
+      <div class="mini"><span>Venta estimada</span><b>${formatMoney(estimado)}</b></div>
+      <div class="mini"><span>Venta cerrada</span><b>${formatMoney(ventas)}</b></div>
+      <div class="mini"><span>Conversión valor</span><b>${formatPct(conversionValor)}</b></div>
+    `;
+
+    return {
+      productores,
+      leadsTotal,
+      areaTotal,
+      estimado,
+      ventas,
+      conversionValor,
+      conversionRegistros,
+      recompraCount
+    };
+  }
+
+  function render(){
+    const tabla = $("tabla");
+    const lista = getFilteredList()
+      .sort((a,b) => String(b.fechaActualizacionISO || b.fechaRegistroISO || "").localeCompare(String(a.fechaActualizacionISO || a.fechaRegistroISO || "")));
+
+    tabla.innerHTML = `
+      <tr>
+        <th>Ensayo</th>
+        <th>Fecha</th>
+        <th>Interesado</th>
+        <th>Etapa</th>
+        <th>Área (ha)</th>
+        <th>Leads</th>
+        <th>Venta Estimada</th>
+        <th>Venta Cerrada</th>
+        <th>Fecha Cierre</th>
+        <th>Recompra</th>
+        <th>Responsable</th>
+        <th>Acciones</th>
+      </tr>
+    `;
+
+    if(!lista.length){
+      tabla.innerHTML += `
+        <tr>
+          <td colspan="12" class="muted">No hay oportunidades registradas para el filtro seleccionado.</td>
+        </tr>
+      `;
+    }
+
+    lista.forEach(o => {
+      const e = ensayos.find(x => String(x.id) === String(o.ensayo)) || {};
+      tabla.innerHTML += `
+        <tr>
+          <td>${ensayoLabel(e)}</td>
+          <td class="nowrap">${formatDate(o.fechaRegistro)}</td>
+          <td>${o.interesado || ""}</td>
+          <td>${o.etapa || ""}</td>
+          <td>${formatNum(o.area)}</td>
+          <td>${formatNum(o.leads)}</td>
+          <td>${formatMoney(o.ventaEstimada)}</td>
+          <td>${formatMoney(o.ventaCerrada)}</td>
+          <td class="nowrap">${formatDate(o.fechaVentaCerrada)}</td>
+          <td>${o.recompra || "No"}</td>
+          <td>${o.responsableComercial || ""}</td>
+          <td>
+            <div class="actions" style="justify-content:center;">
+              <button class="edit" onclick="editar(${o.id})">Editar</button>
+              <button class="delete" onclick="eliminar(${o.id})">Eliminar</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    });
+
+    calcularDashboard();
+  }
+
+  function exportarExcel(){
+    const resumen = calcularDashboard();
+
+    const data = oportunidades.map(o => {
+      const e = ensayos.find(x => String(x.id) === String(o.ensayo)) || {};
+      return {
+        "ID Ensayo": e.id || "",
+        "Cultivo": e.cultivo || "",
+        "Variedad Tratada": e.variedad_tratada || "",
+        "Productor": e.productor || "",
+        "Región": e.region || "",
+        "Fecha Registro": o.fechaRegistro || "",
+        "Interesado": o.interesado || "",
+        "Etapa": o.etapa || "",
+        "Área Potencial (ha)": o.area || 0,
+        "Leads Generados": o.leads || 0,
+        "Venta Estimada $": o.ventaEstimada || 0,
+        "Venta Cerrada $": o.ventaCerrada || 0,
+        "Fecha Venta Cerrada": o.fechaVentaCerrada || "",
+        "Recompra": o.recompra || "No",
+        "Responsable Comercial": o.responsableComercial || "",
+        "Próximo Paso": o.proximoPaso || "",
+        "Fecha Registro ISO": o.fechaRegistroISO || "",
+        "Fecha Actualización ISO": o.fechaActualizacionISO || ""
+      };
+    });
+
+    const resumenSheet = [
+      ["Productores interesados", resumen.productores],
+      ["Leads generados", resumen.leadsTotal],
+      ["Área potencial (ha)", resumen.areaTotal],
+      ["Venta estimada", resumen.estimado],
+      ["Venta cerrada", resumen.ventas],
+      ["Conversión por valor (%)", resumen.conversionValor],
+      ["Conversión de registros con venta (%)", resumen.conversionRegistros],
+      ["Registros con recompra", resumen.recompraCount]
+    ];
+
+    const ws1 = XLSX.utils.json_to_sheet(data);
+    const ws2 = XLSX.utils.aoa_to_sheet(resumenSheet);
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws1, "Detalle");
+    XLSX.utils.book_append_sheet(wb, ws2, "Resumen");
+
+    XLSX.writeFile(wb, "Pipeline_Comercial_Galera_Ajustado.xlsx");
+  }
+
+  $("filtroEnsayo").addEventListener("change", render);
+
+  cargarEnsayos();
+  $("fechaRegistro").value = todayISO();
+  render();
+</script>
+</body>
+</html>
