@@ -1,82 +1,85 @@
 <!DOCTYPE html>
-    limpiarMapa();
-    lat = typeof b.lat === "number" ? b.lat : null;
-    lng = typeof b.lng === "number" ? b.lng : null;
-
-    if(lat !== null && lng !== null){
-      marker = L.marker([lat,lng]).addTo(map);
-      map.setView([lat,lng], 12);
-      $("coords").innerText = `Lat: ${lat.toFixed(5)} | Lng: ${lng.toFixed(5)}`;
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Bitácora de Ensayos</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <style>
+    :root{
+      --bg:#0f172a; --card:#1e293b; --line:#334155; --text:#e2e8f0;
+      --muted:#94a3b8; --primary:#38bdf8; --danger:#ef4444; --success:#22c55e; --warn:#f59e0b;
     }
+    *{box-sizing:border-box}
+    body{font-family:Arial,sans-serif;background:var(--bg);color:var(--text);padding:20px}
+    h1{color:var(--primary);margin-top:0}
+    .container{max-width:1200px;margin:auto}
+    .card{background:var(--card);padding:20px;border-radius:12px;margin-bottom:20px;border:1px solid var(--line)}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+    input,select,button,textarea{width:100%;padding:10px;border-radius:8px;border:none}
+    input,select,textarea{margin-top:6px;background:#fff;color:#111827}
+    label{display:block;font-size:14px;color:var(--muted);margin-top:6px}
+    button{background:var(--primary);cursor:pointer;font-weight:700}
+    .nav{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+    .nav a{text-decoration:none}
+    .nav button{width:auto}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+    .actions button{width:auto}
+    .export{background:var(--success);color:#fff}
+    .edit{background:var(--warn);color:#111827}
+    .delete{background:var(--danger);color:#fff}
+    #map{height:320px;border-radius:12px;border:1px solid var(--line);margin-top:10px}
+    img{max-width:100%;border-radius:10px;margin-top:10px;border:1px solid var(--line)}
+    .timeline-item{background:#0b1220;border:1px solid var(--line);border-radius:12px;padding:16px;margin-top:12px}
+    .muted{color:var(--muted)}
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="nav">
+    <a href="index.html"><button>📋 Ensayos</button></a>
+    <a href="bitacora.html"><button>📸 Bitácora</button></a>
+    <a href="resultados.html"><button>📊 Resultados</button></a>
+    <a href="pipeline.html"><button>🌱 Pipeline</button></a>
+    <a href="tablero.html"><button>🧠 Tablero</button></a>
+    <a href="inteligencia.html"><button>🚀 Inteligencia</button></a>
+    <a href="innovacion.html"><button>🧬 Innovación</button></a>
+  </div>
 
-    window.scrollTo({top:0, behavior:"smooth"});
-  }
+  <h1>📸 Bitácora de Ensayos</h1>
 
-  function eliminar(id){
-    if(!confirm("¿Eliminar este registro de bitácora?")) return;
-    bitacora = bitacora.filter(b => b.id !== id);
-    saveData("bitacora", bitacora);
-    render();
-  }
+  <div class="card">
+    <h2 id="modo">Nuevo Registro</h2>
+    <div class="grid">
+      <div>
+        <label>Ensayo</label>
+        <select id="ensayoSelect"></select>
+      </div>
+      <div>
+        <label>Responsable</label>
+        <input id="responsable" placeholder="Ej. Ing. López">
+      </div>
+      <div>
+        <label>Etapa</label>
+        <select id="etapa">
+          <option value="Siembra">Siembra</option>
+          <option value="Desarrollo">Desarrollo</option>
+          <option value="Cosecha">Cosecha</option>
+        </select>
+      </div>
+      <div>
+        <label>Foto</label>
+        <input type="file" id="foto" accept="image/*">
+      </div>
+    </div>
 
-  function render(){
-    const ensayoFiltro = $("filtroEnsayo").value;
-    const etapaFiltro = $("filtroEtapa").value;
+    <label>Observación</label>
+    <textarea id="comentario" rows="4" placeholder="Describe el avance, hallazgos o incidencia observada..."></textarea>
 
-    let lista = bitacora.slice();
-    if(ensayoFiltro) lista = lista.filter(b => String(b.ensayo_id) === String(ensayoFiltro));
-    if(etapaFiltro) lista = lista.filter(b => b.etapa === etapaFiltro);
+    <label>Ubicación en mapa</label>
+    <div id="map"></div>
+    <p id="coords" class="muted"></p>
 
-    lista.sort((a,b) => String(b.fechaISO || "").localeCompare(String(a.fechaISO || "")));
-
-    $("timeline").innerHTML = lista.length ? "" : `<p class="muted">No hay registros para los filtros seleccionados.</p>`;
-
-    lista.forEach(b => {
-      const e = ensayos.find(x => String(x.id) === String(b.ensayo_id)) || {};
-      $("timeline").innerHTML += `
-        <div class="timeline-item">
-          <h3>${ensayoLabel(e)}</h3>
-          <p><b>Responsable:</b> ${b.responsable || ""}</p>
-          <p><b>Etapa:</b> ${b.etapa || ""}</p>
-          <p><b>Fecha:</b> ${formatDateTime(b.fechaActualizacionISO || b.fechaISO)}</p>
-          <p>${b.comentario || ""}</p>
-          ${typeof b.lat === "number" && typeof b.lng === "number" ? `<p class="muted">Lat: ${b.lat.toFixed(5)} | Lng: ${b.lng.toFixed(5)}</p>` : ""}
-          ${b.foto ? `<img src="${b.foto}" alt="Foto evidencia">` : ""}
-          <div class="actions">
-            <button class="edit" onclick="editar(${b.id})">Editar</button>
-            <button class="delete" onclick="eliminar(${b.id})">Eliminar</button>
-          </div>
-        </div>
-      `;
-    });
-  }
-
-  function exportarExcel(){
-    const data = bitacora.map(b => {
-      const e = ensayos.find(x => String(x.id) === String(b.ensayo_id)) || {};
-      return {
-        "ID Ensayo": b.ensayo_id,
-        "Cultivo": e.cultivo || "",
-        "Variedad": e.variedad_tratada || "",
-        "Productor": e.productor || "",
-        "Responsable": b.responsable,
-        "Etapa": b.etapa,
-        "Comentario": b.comentario,
-        "Lat": typeof b.lat === "number" ? b.lat : "",
-        "Lng": typeof b.lng === "number" ? b.lng : "",
-        "Fecha ISO": b.fechaISO || "",
-        "Última actualización ISO": b.fechaActualizacionISO || ""
-      };
-    });
-
-    const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Bitacora");
-    XLSX.writeFile(wb, "Bitacora_Galera_Ajustada.xlsx");
-  }
-
-  cargarEnsayos();
-  render();
-</script>
-</body>
 </html>
