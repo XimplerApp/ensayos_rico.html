@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Tablero Operativo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root{
+      --bg:#0f172a; --card:#1e293b; --line:#334155; --text:#e2e8f0;
+      --muted:#94a3b8; --primary:#38bdf8; --danger:#ef4444; --success:#22c55e; --warn:#facc15;
+    }
+    *{box-sizing:border-box}
+    body{font-family:Arial,sans-serif;background:var(--bg);color:var(--text);padding:20px}
+    h1{color:var(--primary);margin-top:0}
+    .container{max-width:1200px;margin:auto}
+    .card{background:var(--card);padding:20px;border-radius:12px;margin-bottom:20px;border:1px solid var(--line)}
+    .nav{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+    .nav a{text-decoration:none}
+    button{padding:10px;border-radius:8px;border:none;background:var(--primary);cursor:pointer;font-weight:700}
+    .kpi{font-size:18px;margin:8px 0}
+    .green{color:#22c55e}
+    .red{color:#ef4444}
+    .yellow{color:#facc15}
+    .muted{color:var(--muted)}
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="nav">
+    <a href="index.html"><button>📋 Ensayos</button></a>
+    <a href="bitacora.html"><button>📸 Bitácora</button></a>
+    <a href="resultados.html"><button>📊 Resultados</button></a>
+    <a href="pipeline.html"><button>🌱 Pipeline</button></a>
+    <a href="tablero.html"><button>🧠 Tablero</button></a>
+    <a href="inteligencia.html"><button>🚀 Inteligencia</button></a>
+    <a href="innovacion.html"><button>🧬 Innovación</button></a>
+  </div>
+
+  <h1>🧠 Tablero Operativo</h1>
+
+  <div class="card">
+    <h2>🔬 KPIs Técnicos</h2>
+    <div id="kpiTecnico"></div>
+  </div>
+
+  <div class="card">
+    <h2>💰 KPIs Comerciales</h2>
+    <div id="kpiComercial"></div>
+  </div>
+
+  <div class="card">
+    <h2>🚀 KPIs Estratégicos</h2>
+    <div id="kpiEstrategico"></div>
+  </div>
+</div>
+
+<script>
+  function getData(key){
+    try{ return JSON.parse(localStorage.getItem(key)) || []; }
+    catch(e){ return []; }
+  }
+  const money = n => "$" + new Intl.NumberFormat("es-MX", {minimumFractionDigits:2, maximumFractionDigits:2}).format(Number(n || 0));
+</html>
