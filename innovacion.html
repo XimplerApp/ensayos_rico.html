@@ -38,7 +38,7 @@
     }
 
     .container{
-      max-width:1280px;
+      max-width:1320px;
       margin:auto;
     }
 
@@ -67,6 +67,12 @@
       cursor:pointer;
       font-weight:700;
       color:#082f49;
+    }
+
+    .secondary{
+      background:#111827;
+      color:#e2e8f0;
+      border:1px solid var(--line);
     }
 
     .grid{
@@ -181,16 +187,6 @@
       color:var(--muted);
     }
 
-    .score-badge{
-      display:inline-block;
-      padding:4px 10px;
-      border-radius:999px;
-      font-size:12px;
-      font-weight:700;
-      border:1px solid var(--line);
-      background:#0b1220;
-    }
-
     .radar-wrap{
       display:grid;
       grid-template-columns:minmax(320px,460px) 1fr;
@@ -225,6 +221,19 @@
       border:1px solid var(--line);
       border-radius:10px;
       padding:10px;
+    }
+
+    .weight-box{
+      background:#0b1220;
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:14px;
+    }
+
+    .weight-note{
+      margin-top:10px;
+      font-size:14px;
+      color:var(--muted);
     }
 
     .nowrap{white-space:nowrap}
@@ -272,8 +281,66 @@
 
     <div class="actions">
       <button onclick="aplicarFiltros()">Aplicar filtros</button>
-      <button onclick="limpiarFiltros()">Limpiar filtros</button>
+      <button class="secondary" onclick="limpiarFiltros()">Limpiar filtros</button>
     </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">
+      <h2>Pesos del Score Varietal</h2>
+      <span class="badge">Configurables por estrategia del ciclo</span>
+    </div>
+
+    <div class="grid">
+      <div class="weight-box">
+        <label>Preset estratégico</label>
+        <select id="presetPesos">
+          <option value="balanceado">Balanceado</option>
+          <option value="rendimiento">Enfoque Rendimiento</option>
+          <option value="comercial">Enfoque Comercial</option>
+          <option value="sanidad">Enfoque Sanidad</option>
+          <option value="adopcion">Enfoque Adopción</option>
+        </select>
+      </div>
+
+      <div class="weight-box">
+        <label>Rendimiento / Benchmark (%)</label>
+        <input id="pesoRendimiento" type="number" min="0" step="1">
+      </div>
+
+      <div class="weight-box">
+        <label>ROI (%)</label>
+        <input id="pesoROI" type="number" min="0" step="1">
+      </div>
+
+      <div class="weight-box">
+        <label>Conversión (%)</label>
+        <input id="pesoConversion" type="number" min="0" step="1">
+      </div>
+
+      <div class="weight-box">
+        <label>Adopción (%)</label>
+        <input id="pesoAdopcion" type="number" min="0" step="1">
+      </div>
+
+      <div class="weight-box">
+        <label>Sanidad (%)</label>
+        <input id="pesoSanidad" type="number" min="0" step="1">
+      </div>
+
+      <div class="weight-box">
+        <label>Tracción (%)</label>
+        <input id="pesoTraccion" type="number" min="0" step="1">
+      </div>
+    </div>
+
+    <div class="actions">
+      <button onclick="aplicarPreset()">Aplicar preset</button>
+      <button onclick="guardarPesos()">Guardar pesos</button>
+      <button class="secondary" onclick="restablecerPesos()">Restablecer</button>
+    </div>
+
+    <div class="weight-note" id="pesoInfo"></div>
   </div>
 
   <div class="card">
@@ -312,7 +379,7 @@
   <div class="card">
     <div class="section-title">
       <h2>Portafolio Varietal</h2>
-      <span class="badge">Score y recomendación</span>
+      <span class="badge">Score, benchmark y recomendación</span>
     </div>
     <table id="tablaPortafolio"></table>
   </div>
@@ -336,6 +403,10 @@
     }
   }
 
+  function saveData(key, data){
+    localStorage.setItem(key, JSON.stringify(data));
+  }
+
   const money = n => "$" + new Intl.NumberFormat("es-MX", {
     minimumFractionDigits:2,
     maximumFractionDigits:2
@@ -354,6 +425,58 @@
   let ensayos = getData("ensayos");
   let resultados = getData("resultados");
   let oportunidades = getData("oportunidades");
+
+  const DEFAULT_PESOS = {
+    rendimiento: 25,
+    roi: 20,
+    conversion: 15,
+    adopcion: 15,
+    sanidad: 10,
+    traccion: 15
+  };
+
+  const PRESETS = {
+    balanceado: {
+      rendimiento: 25,
+      roi: 20,
+      conversion: 15,
+      adopcion: 15,
+      sanidad: 10,
+      traccion: 15
+    },
+    rendimiento: {
+      rendimiento: 35,
+      roi: 20,
+      conversion: 10,
+      adopcion: 10,
+      sanidad: 15,
+      traccion: 10
+    },
+    comercial: {
+      rendimiento: 15,
+      roi: 25,
+      conversion: 25,
+      adopcion: 15,
+      sanidad: 5,
+      traccion: 15
+    },
+    sanidad: {
+      rendimiento: 20,
+      roi: 15,
+      conversion: 10,
+      adopcion: 10,
+      sanidad: 30,
+      traccion: 15
+    },
+    adopcion: {
+      rendimiento: 15,
+      roi: 15,
+      conversion: 15,
+      adopcion: 30,
+      sanidad: 10,
+      traccion: 15
+    }
+  };
 
   function latestResultadosMap(){
     const mapObj = {};
@@ -428,6 +551,94 @@
     aplicarFiltros();
   }
 
+  function loadPesos(){
+    const saved = getData("innovacion_pesos");
+    const pesos = {
+      ...DEFAULT_PESOS,
+      ...saved
+    };
+
+    document.getElementById("pesoRendimiento").value = pesos.rendimiento;
+    document.getElementById("pesoROI").value = pesos.roi;
+    document.getElementById("pesoConversion").value = pesos.conversion;
+    document.getElementById("pesoAdopcion").value = pesos.adopcion;
+    document.getElementById("pesoSanidad").value = pesos.sanidad;
+    document.getElementById("pesoTraccion").value = pesos.traccion;
+
+    updatePesoInfo();
+  }
+
+  function getPesos(){
+    return {
+      rendimiento: Number(document.getElementById("pesoRendimiento").value || 0),
+      roi: Number(document.getElementById("pesoROI").value || 0),
+      conversion: Number(document.getElementById("pesoConversion").value || 0),
+      adopcion: Number(document.getElementById("pesoAdopcion").value || 0),
+      sanidad: Number(document.getElementById("pesoSanidad").value || 0),
+      traccion: Number(document.getElementById("pesoTraccion").value || 0)
+    };
+  }
+
+  function getPesosNormalizados(){
+    const p = getPesos();
+    const total = p.rendimiento + p.roi + p.conversion + p.adopcion + p.sanidad + p.traccion;
+
+    if(total <= 0){
+      return {
+        rendimiento: 0.25,
+        roi: 0.20,
+        conversion: 0.15,
+        adopcion: 0.15,
+        sanidad: 0.10,
+        traccion: 0.15
+      };
+    }
+
+    return {
+      rendimiento: p.rendimiento / total,
+      roi: p.roi / total,
+      conversion: p.conversion / total,
+      adopcion: p.adopcion / total,
+      sanidad: p.sanidad / total,
+      traccion: p.traccion / total
+    };
+  }
+
+  function updatePesoInfo(){
+    const p = getPesos();
+    const total = p.rendimiento + p.roi + p.conversion + p.adopcion + p.sanidad + p.traccion;
+    document.getElementById("pesoInfo").innerText =
+      `Total actual: ${total}%. Si no suma 100, el sistema lo normaliza automáticamente para calcular el score.`;
+  }
+
+  function guardarPesos(){
+    const p = getPesos();
+    saveData("innovacion_pesos", p);
+    updatePesoInfo();
+    aplicarFiltros();
+  }
+
+  function restablecerPesos(){
+    saveData("innovacion_pesos", DEFAULT_PESOS);
+    loadPesos();
+    aplicarFiltros();
+  }
+
+  function aplicarPreset(){
+    const preset = document.getElementById("presetPesos").value;
+    const p = PRESETS[preset] || DEFAULT_PESOS;
+
+    document.getElementById("pesoRendimiento").value = p.rendimiento;
+    document.getElementById("pesoROI").value = p.roi;
+    document.getElementById("pesoConversion").value = p.conversion;
+    document.getElementById("pesoAdopcion").value = p.adopcion;
+    document.getElementById("pesoSanidad").value = p.sanidad;
+    document.getElementById("pesoTraccion").value = p.traccion;
+
+    updatePesoInfo();
+    aplicarFiltros();
+  }
+
   function scoreByThreshold(value, thresholds){
     for(let i = 0; i < thresholds.length; i++){
       if(value >= thresholds[i].min) return thresholds[i].score;
@@ -447,7 +658,7 @@
       return {
         label: "⭐ Escalar",
         className: "green",
-        text: "Variedad sólida en retorno, adopción y tracción. Prioridad alta para expansión comercial."
+        text: "Variedad sólida en benchmark, retorno y adopción. Prioridad alta para expansión."
       };
     }
 
@@ -455,7 +666,7 @@
       return {
         label: "🚀 Promesa",
         className: "yellow",
-        text: "Buen potencial técnico-comercial. Requiere más demostración, seguimiento o evidencia regional."
+        text: "Buen potencial técnico-comercial. Conviene reforzar evidencia o ampliar validación."
       };
     }
 
@@ -463,20 +674,21 @@
       return {
         label: "🧪 Experimental",
         className: "yellow",
-        text: "Aún necesita validación o conversión comercial antes de escalar."
+        text: "Aún necesita mejor benchmark, tracción o conversión antes de escalar."
       };
     }
 
     return {
       label: "⛔ Revisar",
       className: "red",
-      text: "Desempeño limitado. Conviene rediseñar estrategia, reforzar evidencia o reconsiderar inversión."
-    };
+      text: "Desempeño limitado. Conviene replantear la estrategia o reducir prioridad."
+      };
   }
 
   function aggregateVarieties(){
     const lista = getFilteredEnsayos();
     const resultadosMap = latestResultadosMap();
+    const pesos = getPesosNormalizados();
     const variedades = {};
 
     lista.forEach(e => {
@@ -490,6 +702,7 @@
           ensayos: 0,
           cultivos: new Set(),
           regiones: new Set(),
+          competidores: new Set(),
           roiSum: 0,
           roiCount: 0,
           mejoraSum: 0,
@@ -513,6 +726,7 @@
       v.ensayos++;
       v.cultivos.add(e.cultivo || "");
       v.regiones.add(e.region || "");
+      if(e.variedad_control) v.competidores.add(e.variedad_control);
 
       if(r){
         if(typeof r.roi === "number"){
@@ -565,7 +779,7 @@
       const rendimientoScore = scoreByThreshold(mejoraProm, [
         { min: 20, score: 5 },
         { min: 15, score: 4 },
-        { min: 8,  score: 3 },
+        { min: 8, score: 3 },
         { min: 0.01, score: 2 }
       ]);
 
@@ -591,8 +805,8 @@
       ]);
 
       const sanidadScore = incidenciaProm === null ? 3 : inverseScoreByThreshold(incidenciaProm, [
-        { max: 3,  score: 5 },
-        { max: 6,  score: 4 },
+        { max: 3, score: 5 },
+        { max: 6, score: 4 },
         { max: 10, score: 3 },
         { max: 15, score: 2 }
       ]);
@@ -605,12 +819,12 @@
       ]);
 
       const scoreFinal =
-        (rendimientoScore * 0.25) +
-        (roiScore * 0.20) +
-        (conversionScore * 0.15) +
-        (adopcionScore * 0.15) +
-        (sanidadScore * 0.10) +
-        (traccionScore * 0.15);
+        (rendimientoScore * pesos.rendimiento) +
+        (roiScore * pesos.roi) +
+        (conversionScore * pesos.conversion) +
+        (adopcionScore * pesos.adopcion) +
+        (sanidadScore * pesos.sanidad) +
+        (traccionScore * pesos.traccion);
 
       const status = classifyVariety({
         scoreFinal,
@@ -635,7 +849,8 @@
         sanidadScore,
         traccionScore,
         scoreFinal,
-        status
+        status,
+        competidorTexto: [...v.competidores].filter(Boolean).join(", ") || "N/D"
       };
     }).sort((a,b) => b.scoreFinal - a.scoreFinal);
   }
@@ -649,6 +864,7 @@
     const ventas = variedades.reduce((a,b) => a + Number(b.ventas || 0), 0);
     const scoreProm = variedades.length ? variedades.reduce((a,b) => a + Number(b.scoreFinal || 0), 0) / variedades.length : 0;
     const roiProm = variedades.length ? variedades.reduce((a,b) => a + Number(b.roiProm || 0), 0) / variedades.length : 0;
+    const benchmarkProm = variedades.length ? variedades.reduce((a,b) => a + Number(b.mejoraProm || 0), 0) / variedades.length : 0;
 
     document.getElementById("resumenEjecutivo").innerHTML = `
       <div class="mini">
@@ -679,6 +895,10 @@
         <span>ROI promedio portafolio</span>
         <b>${pct(roiProm * 100)}</b>
       </div>
+      <div class="mini">
+        <span>Benchmark promedio vs control</span>
+        <b>${pct(benchmarkProm)}</b>
+      </div>
     `;
   }
 
@@ -688,10 +908,11 @@
     let html = `
       <tr>
         <th>Variedad</th>
+        <th>Competidor benchmark</th>
         <th>Cultivos</th>
         <th>Regiones</th>
         <th>Ensayos</th>
-        <th>Mejora</th>
+        <th>Mejora vs control</th>
         <th>ROI</th>
         <th>Ventas</th>
         <th>Adopción</th>
@@ -703,7 +924,7 @@
     if(!variedades.length){
       html += `
         <tr>
-          <td colspan="10" class="empty">No hay información suficiente para el portafolio varietal.</td>
+          <td colspan="11" class="empty">No hay información suficiente para el portafolio varietal.</td>
         </tr>
       `;
       document.getElementById("tablaPortafolio").innerHTML = html;
@@ -714,10 +935,11 @@
       html += `
         <tr>
           <td><b>${v.variedad}</b></td>
+          <td>${v.competidorTexto}</td>
           <td>${[...v.cultivos].filter(Boolean).join(", ") || "N/D"}</td>
           <td>${[...v.regiones].filter(Boolean).join(", ") || "N/D"}</td>
           <td>${v.ensayos}</td>
-          <td>${pct(v.mejoraProm)}</td>
+          <td class="${v.mejoraProm >= 15 ? 'green' : v.mejoraProm >= 5 ? 'yellow' : 'red'}"><b>${pct(v.mejoraProm)}</b></td>
           <td class="${v.roiProm >= 0.3 ? 'green' : v.roiProm >= 0 ? 'yellow' : 'red'}"><b>${pct(v.roiProm * 100)}</b></td>
           <td>${money(v.ventas)}</td>
           <td>${pct(v.adopcionPct)}</td>
@@ -756,9 +978,10 @@
     select.value = variedades.some(v => v.variedad === current) ? current : variedades[0].variedad;
 
     const selected = variedades.find(v => v.variedad === select.value) || variedades[0];
+    const pesos = getPesos();
 
     const labels = [
-      { key:"rendimientoScore", text:"Rendimiento" },
+      { key:"rendimientoScore", text:"Benchmark" },
       { key:"roiScore", text:"ROI" },
       { key:"conversionScore", text:"Conversión" },
       { key:"adopcionScore", text:"Adopción" },
@@ -817,20 +1040,21 @@
 
     document.getElementById("radarInsights").innerHTML = `
       <div class="kpi">Score final: <b>${num(selected.scoreFinal)}</b></div>
+      <div class="kpi">Competidor benchmark: <b>${selected.competidorTexto}</b></div>
+      <div class="kpi">Mejora vs control: <b>${pct(selected.mejoraProm)}</b></div>
       <div class="kpi">ROI promedio: <b>${pct(selected.roiProm * 100)}</b></div>
-      <div class="kpi">Mejora promedio: <b>${pct(selected.mejoraProm)}</b></div>
       <div class="kpi">Adopción: <b>${pct(selected.adopcionPct)}</b></div>
       <div class="kpi">Ventas derivadas: <b>${money(selected.ventas)}</b></div>
       <div class="kpi ${selected.status.className}"><b>${selected.status.text}</b></div>
     `;
 
     document.getElementById("radarLegend").innerHTML = `
-      <div class="legend-item"><b>Rendimiento</b><br>${num(selected.rendimientoScore)} / 5</div>
-      <div class="legend-item"><b>ROI</b><br>${num(selected.roiScore)} / 5</div>
-      <div class="legend-item"><b>Conversión</b><br>${num(selected.conversionScore)} / 5</div>
-      <div class="legend-item"><b>Adopción</b><br>${num(selected.adopcionScore)} / 5</div>
-      <div class="legend-item"><b>Sanidad</b><br>${num(selected.sanidadScore)} / 5</div>
-      <div class="legend-item"><b>Tracción</b><br>${num(selected.traccionScore)} / 5</div>
+      <div class="legend-item"><b>Benchmark</b><br>${num(selected.rendimientoScore)} / 5 <br><span class="muted">Peso: ${pesos.rendimiento}%</span></div>
+      <div class="legend-item"><b>ROI</b><br>${num(selected.roiScore)} / 5 <br><span class="muted">Peso: ${pesos.roi}%</span></div>
+      <div class="legend-item"><b>Conversión</b><br>${num(selected.conversionScore)} / 5 <br><span class="muted">Peso: ${pesos.conversion}%</span></div>
+      <div class="legend-item"><b>Adopción</b><br>${num(selected.adopcionScore)} / 5 <br><span class="muted">Peso: ${pesos.adopcion}%</span></div>
+      <div class="legend-item"><b>Sanidad</b><br>${num(selected.sanidadScore)} / 5 <br><span class="muted">Peso: ${pesos.sanidad}%</span></div>
+      <div class="legend-item"><b>Tracción</b><br>${num(selected.traccionScore)} / 5 <br><span class="muted">Peso: ${pesos.traccion}%</span></div>
     `;
   }
 
@@ -853,7 +1077,7 @@
         ${top.map(v => `
           <div class="kpi ${v.status.className}">
             <b>${v.variedad}</b> — ${v.status.label}<br>
-            Score: ${num(v.scoreFinal)} | ROI: ${pct(v.roiProm * 100)} | Ventas: ${money(v.ventas)}
+            Benchmark: ${pct(v.mejoraProm)} | ROI: ${pct(v.roiProm * 100)} | Score: ${num(v.scoreFinal)}
           </div>
         `).join("")}
       </div>
@@ -865,7 +1089,7 @@
         ${bottom.map(v => `
           <div class="kpi ${v.status.className}">
             <b>${v.variedad}</b> — ${v.status.label}<br>
-            Score: ${num(v.scoreFinal)} | ROI: ${pct(v.roiProm * 100)} | Adopción: ${pct(v.adopcionPct)}
+            Competidor: ${v.competidorTexto} | Benchmark: ${pct(v.mejoraProm)} | Adopción: ${pct(v.adopcionPct)}
           </div>
         `).join("")}
       </div>
@@ -877,6 +1101,7 @@
   }
 
   function aplicarFiltros(){
+    updatePesoInfo();
     renderResumen();
     renderTablaPortafolio();
     renderRadar();
@@ -884,8 +1109,15 @@
   }
 
   document.getElementById("radarVariedad").addEventListener("change", renderRadar);
+  ["pesoRendimiento","pesoROI","pesoConversion","pesoAdopcion","pesoSanidad","pesoTraccion"].forEach(id => {
+    document.getElementById(id).addEventListener("input", () => {
+      updatePesoInfo();
+      aplicarFiltros();
+    });
+  });
 
   cargarFiltros();
+  loadPesos();
   aplicarFiltros();
 </script>
 </body>
