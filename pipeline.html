@@ -17,6 +17,7 @@
       --success:#22c55e;
       --warn:#f59e0b;
       --yellow:#facc15;
+      --danger-bg:#3b0f14;
     }
     *{box-sizing:border-box}
     body{
@@ -24,16 +25,21 @@
       background:var(--bg);
       color:var(--text);
       padding:20px;
+      margin:0;
     }
     h1{color:var(--primary);margin-top:0}
     h2,h3{margin-top:0}
-    .container{max-width:1200px;margin:auto}
+    .container{max-width:1280px;margin:auto}
     .card{
       background:var(--card);
       padding:20px;
       border-radius:12px;
       margin-bottom:20px;
       border:1px solid var(--line);
+    }
+    .alert-card{
+      background:var(--danger-bg);
+      border:1px solid var(--danger);
     }
     .grid{
       display:grid;
@@ -61,6 +67,7 @@
       background:var(--primary);
       cursor:pointer;
       font-weight:700;
+      color:#082f49;
     }
     .save{background:var(--success);color:#fff}
     .delete{background:var(--danger);color:#fff}
@@ -111,6 +118,7 @@
     .red{color:var(--danger)}
     .yellow{color:var(--yellow)}
     .muted{color:var(--muted)}
+    .danger-text{color:#fecaca}
     table{
       width:100%;
       border-collapse:collapse;
@@ -124,10 +132,30 @@
     }
     th{background:#0b1220}
     .nowrap{white-space:nowrap}
-    hr{
-      border:none;
-      border-top:1px solid var(--line);
-      margin:14px 0;
+    .list-block{
+      background:#0b1220;
+      border:1px solid var(--line);
+      border-radius:10px;
+      padding:14px;
+      margin-top:10px;
+    }
+    .empty{
+      color:var(--muted);
+      font-style:italic;
+    }
+    .badge{
+      display:inline-block;
+      padding:4px 10px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:700;
+      border:1px solid var(--line);
+      background:#111827;
+      color:var(--muted);
+      margin-left:8px;
+    }
+    .vencido-row{
+      background:rgba(239,68,68,0.12);
     }
   </style>
 </head>
@@ -145,6 +173,16 @@
   </div>
 
   <h1>🌱 Pipeline Comercial de Ensayos</h1>
+
+  <div class="card alert-card">
+    <h2>🚨 Ensayos terminados sin oportunidad comercial</h2>
+    <div id="alertasPerdidos"></div>
+  </div>
+
+  <div class="card alert-card">
+    <h2>⏰ Oportunidades con seguimiento vencido</h2>
+    <div id="alertasSeguimiento"></div>
+  </div>
 
   <div class="card">
     <h2>📊 Dashboard del Pipeline</h2>
@@ -183,6 +221,11 @@
       </div>
 
       <div>
+        <label>Nombre de productor nuevo</label>
+        <input id="productorNuevo" placeholder="Ej. Rancho San José / Nuevo lead">
+      </div>
+
+      <div>
         <label>Etapa comercial</label>
         <select id="etapa">
           <option value="Lead">Lead</option>
@@ -197,6 +240,11 @@
       <div>
         <label>Área potencial (ha)</label>
         <input id="area" placeholder="Ej. 12.5">
+      </div>
+
+      <div>
+        <label>Superficie potencial del productor (ha)</label>
+        <input id="superficiePotencial" placeholder="Ej. 50">
       </div>
 
       <div>
@@ -220,6 +268,11 @@
       </div>
 
       <div>
+        <label>Próxima fecha de seguimiento</label>
+        <input type="date" id="proximaFechaSeguimiento">
+      </div>
+
+      <div>
         <label>¿Recompra?</label>
         <select id="recompra">
           <option value="No">No</option>
@@ -234,7 +287,7 @@
 
       <div>
         <label>Próximo paso</label>
-        <input id="proximoPaso" placeholder="Ej. Visita técnica / Cotización">
+        <input id="proximoPaso" placeholder="Ej. Visita técnica / Cotización / Llamada">
       </div>
     </div>
 
@@ -307,11 +360,22 @@
     return new Date().toISOString().slice(0,10);
   }
 
+  function isSeguimientoVencido(o){
+    const hoy = todayISO();
+    const etapa = String(o.etapa || "");
+    const cerrada = Number(o.ventaCerrada || 0) > 0;
+    if(!o.proximaFechaSeguimiento) return false;
+    if(cerrada || etapa === "Venta" || etapa === "Recompra") return false;
+    return o.proximaFechaSeguimiento < hoy;
+  }
+
   let ensayos = getData("ensayos");
   let oportunidades = getData("oportunidades");
   let editId = null;
 
   function cargarEnsayos(){
+    ensayos = getData("ensayos");
+
     $("idEnsayo").innerHTML = "";
     $("filtroEnsayo").innerHTML = `<option value="">Todos los ensayos</option>`;
 
@@ -328,12 +392,15 @@
 
     $("fechaRegistro").value = todayISO();
     $("interesado").value = "Sí";
+    $("productorNuevo").value = "";
     $("etapa").value = "Lead";
     $("area").value = "";
+    $("superficiePotencial").value = "";
     $("leads").value = "";
     $("ventaEstimada").value = "";
     $("ventaCerrada").value = "";
     $("fechaVentaCerrada").value = "";
+    $("proximaFechaSeguimiento").value = "";
     $("recompra").value = "No";
     $("responsableComercial").value = "";
     $("proximoPaso").value = "";
@@ -349,11 +416,25 @@
       return;
     }
 
+    const fechaRegistro = $("fechaRegistro").value || todayISO();
     const ventaCerradaVal = parseNumber($("ventaCerrada").value);
     let fechaVenta = $("fechaVentaCerrada").value;
+    const etapa = $("etapa").value;
+    const proximaFechaSeguimiento = $("proximaFechaSeguimiento").value;
+    const proximoPaso = $("proximoPaso").value.trim();
+
+    if((etapa !== "Venta" && etapa !== "Recompra") && !proximaFechaSeguimiento){
+      alert("Captura la próxima fecha de seguimiento para que la oportunidad no se enfríe.");
+      return;
+    }
+
+    if((etapa !== "Venta" && etapa !== "Recompra") && !proximoPaso){
+      alert("Captura el próximo paso comercial.");
+      return;
+    }
 
     if(ventaCerradaVal > 0 && !fechaVenta){
-      fechaVenta = $("fechaRegistro").value || todayISO();
+      fechaVenta = fechaRegistro;
     }
 
     const nowIso = new Date().toISOString();
@@ -361,21 +442,24 @@
     const data = {
       id: editId || Date.now(),
       ensayo: $("idEnsayo").value,
-      fechaRegistro: $("fechaRegistro").value || todayISO(),
+      fechaRegistro,
       fechaRegistroISO: editId
         ? (oportunidades.find(o => o.id === editId)?.fechaRegistroISO || nowIso)
         : nowIso,
       fechaActualizacionISO: nowIso,
       interesado: $("interesado").value,
-      etapa: $("etapa").value,
+      productorNuevo: $("productorNuevo").value.trim(),
+      etapa,
       area: parseNumber($("area").value),
+      superficiePotencial: parseNumber($("superficiePotencial").value),
       leads: parseNumber($("leads").value),
       ventaEstimada: parseNumber($("ventaEstimada").value),
       ventaCerrada: ventaCerradaVal,
       fechaVentaCerrada: fechaVenta || "",
+      proximaFechaSeguimiento: proximaFechaSeguimiento || "",
       recompra: $("recompra").value,
       responsableComercial: $("responsableComercial").value.trim(),
-      proximoPaso: $("proximoPaso").value.trim()
+      proximoPaso
     };
 
     if(editId){
@@ -400,12 +484,15 @@
     $("idEnsayo").value = o.ensayo;
     $("fechaRegistro").value = o.fechaRegistro || todayISO();
     $("interesado").value = o.interesado || "Sí";
+    $("productorNuevo").value = o.productorNuevo || "";
     $("etapa").value = o.etapa || "Lead";
     $("area").value = o.area ?? "";
+    $("superficiePotencial").value = o.superficiePotencial ?? "";
     $("leads").value = o.leads ?? "";
     $("ventaEstimada").value = o.ventaEstimada ?? "";
     $("ventaCerrada").value = o.ventaCerrada ?? "";
     $("fechaVentaCerrada").value = o.fechaVentaCerrada || "";
+    $("proximaFechaSeguimiento").value = o.proximaFechaSeguimiento || "";
     $("recompra").value = o.recompra || "No";
     $("responsableComercial").value = o.responsableComercial || "";
     $("proximoPaso").value = o.proximoPaso || "";
@@ -431,12 +518,56 @@
     return lista;
   }
 
+  function renderAlertasPerdidos(){
+    ensayos = getData("ensayos");
+    oportunidades = getData("oportunidades");
+
+    const perdidos = ensayos.filter(e =>
+      e.estado === "Terminado" &&
+      !oportunidades.some(o => String(o.ensayo) === String(e.id))
+    );
+
+    if(!perdidos.length){
+      $("alertasPerdidos").innerHTML = `<p class="empty">No hay ensayos terminados sin oportunidad comercial.</p>`;
+      return;
+    }
+
+    $("alertasPerdidos").innerHTML = perdidos.map(e => `
+      <div class="list-block">
+        <div><b>${e.id}</b> — ${e.cultivo || ""} / ${e.variedad_tratada || ""}</div>
+        <div class="danger-text">Región: ${e.region || "N/D"} | Técnico: ${e.tecnico || "N/D"} | Productor original: ${e.productor || "N/D"}</div>
+        <div class="danger-text">Cliente objetivo: ${e.cliente_objetivo || "N/D"} | Prioridad: ${e.prioridad || "N/D"}</div>
+      </div>
+    `).join("");
+  }
+
+  function renderAlertasSeguimiento(){
+    const vencidas = oportunidades.filter(isSeguimientoVencido);
+
+    if(!vencidas.length){
+      $("alertasSeguimiento").innerHTML = `<p class="empty">No hay seguimientos vencidos.</p>`;
+      return;
+    }
+
+    $("alertasSeguimiento").innerHTML = vencidas.map(o => {
+      const e = ensayos.find(x => String(x.id) === String(o.ensayo)) || {};
+      return `
+        <div class="list-block">
+          <div><b>${ensayoLabel(e)}</b></div>
+          <div class="danger-text">Productor nuevo: ${o.productorNuevo || "N/D"} | Etapa: ${o.etapa || "N/D"} | Responsable: ${o.responsableComercial || "N/D"}</div>
+          <div class="danger-text">Seguimiento vencido desde: ${formatDate(o.proximaFechaSeguimiento)} | Próximo paso: ${o.proximoPaso || "N/D"}</div>
+        </div>
+      `;
+    }).join("");
+  }
+
   function calcularDashboard(){
     const lista = getFilteredList();
 
     const productores = lista.filter(o => o.interesado === "Sí").length;
     const leadsTotal = lista.reduce((a,b) => a + Number(b.leads || 0), 0);
     const areaTotal = lista.reduce((a,b) => a + Number(b.area || 0), 0);
+    const superficiePotencialTotal = lista.reduce((a,b) => a + Number(b.superficiePotencial || 0), 0);
     const estimado = lista.reduce((a,b) => a + Number(b.ventaEstimada || 0), 0);
     const ventas = lista.reduce((a,b) => a + Number(b.ventaCerrada || 0), 0);
 
@@ -444,43 +575,54 @@
     const oportunidadesConVenta = lista.filter(o => Number(o.ventaCerrada || 0) > 0).length;
     const conversionRegistros = lista.length ? (oportunidadesConVenta / lista.length) * 100 : 0;
     const recompraCount = lista.filter(o => o.recompra === "Sí").length;
+    const seguimientoVencido = lista.filter(isSeguimientoVencido).length;
 
     const claseValor = conversionValor >= 25 ? "green" : conversionValor >= 10 ? "yellow" : "red";
     const claseRegistros = conversionRegistros >= 25 ? "green" : conversionRegistros >= 10 ? "yellow" : "red";
+    const claseSeguimiento = seguimientoVencido === 0 ? "green" : seguimientoVencido <= 2 ? "yellow" : "red";
 
     $("dashboard").innerHTML = `
       <div class="kpi">👨‍🌾 Productores interesados: <b>${productores}</b></div>
       <div class="kpi">📊 Leads generados: <b>${formatNum(leadsTotal)}</b></div>
       <div class="kpi">🌱 Área potencial: <b>${formatNum(areaTotal)} ha</b></div>
+      <div class="kpi">📏 Superficie potencial productor: <b>${formatNum(superficiePotencialTotal)} ha</b></div>
       <div class="kpi">💰 Venta estimada: <b>${formatMoney(estimado)}</b></div>
       <div class="kpi">💵 Venta cerrada: <b>${formatMoney(ventas)}</b></div>
       <div class="kpi ${claseValor}">📈 Conversión por valor: <b>${formatPct(conversionValor)}</b></div>
       <div class="kpi ${claseRegistros}">🧩 Conversión de registros con venta: <b>${formatPct(conversionRegistros)}</b></div>
       <div class="kpi">🔁 Registros con recompra: <b>${recompraCount}</b></div>
+      <div class="kpi ${claseSeguimiento}">⏰ Seguimientos vencidos: <b>${seguimientoVencido}</b></div>
     `;
 
     $("resumenMini").innerHTML = `
       <div class="mini"><span>Productores interesados</span><b>${productores}</b></div>
       <div class="mini"><span>Leads</span><b>${formatNum(leadsTotal)}</b></div>
       <div class="mini"><span>Área potencial (ha)</span><b>${formatNum(areaTotal)}</b></div>
+      <div class="mini"><span>Superficie potencial (ha)</span><b>${formatNum(superficiePotencialTotal)}</b></div>
       <div class="mini"><span>Venta estimada</span><b>${formatMoney(estimado)}</b></div>
       <div class="mini"><span>Venta cerrada</span><b>${formatMoney(ventas)}</b></div>
       <div class="mini"><span>Conversión valor</span><b>${formatPct(conversionValor)}</b></div>
+      <div class="mini"><span>Seguimientos vencidos</span><b>${seguimientoVencido}</b></div>
     `;
 
     return {
       productores,
       leadsTotal,
       areaTotal,
+      superficiePotencialTotal,
       estimado,
       ventas,
       conversionValor,
       conversionRegistros,
-      recompraCount
+      recompraCount,
+      seguimientoVencido
     };
   }
 
   function render(){
+    ensayos = getData("ensayos");
+    oportunidades = getData("oportunidades");
+
     const tabla = $("tabla");
     const lista = getFilteredList()
       .sort((a,b) => String(b.fechaActualizacionISO || b.fechaRegistroISO || "").localeCompare(String(a.fechaActualizacionISO || a.fechaRegistroISO || "")));
@@ -490,13 +632,15 @@
         <th>Ensayo</th>
         <th>Fecha</th>
         <th>Interesado</th>
+        <th>Productor nuevo</th>
         <th>Etapa</th>
         <th>Área (ha)</th>
+        <th>Sup. Potencial (ha)</th>
         <th>Leads</th>
         <th>Venta Estimada</th>
         <th>Venta Cerrada</th>
         <th>Fecha Cierre</th>
-        <th>Recompra</th>
+        <th>Seguimiento</th>
         <th>Responsable</th>
         <th>Acciones</th>
       </tr>
@@ -505,25 +649,31 @@
     if(!lista.length){
       tabla.innerHTML += `
         <tr>
-          <td colspan="12" class="muted">No hay oportunidades registradas para el filtro seleccionado.</td>
+          <td colspan="14" class="muted">No hay oportunidades registradas para el filtro seleccionado.</td>
         </tr>
       `;
     }
 
     lista.forEach(o => {
       const e = ensayos.find(x => String(x.id) === String(o.ensayo)) || {};
+      const vencido = isSeguimientoVencido(o);
+
       tabla.innerHTML += `
-        <tr>
+        <tr class="${vencido ? 'vencido-row' : ''}">
           <td>${ensayoLabel(e)}</td>
           <td class="nowrap">${formatDate(o.fechaRegistro)}</td>
           <td>${o.interesado || ""}</td>
+          <td>${o.productorNuevo || ""}</td>
           <td>${o.etapa || ""}</td>
           <td>${formatNum(o.area)}</td>
+          <td>${formatNum(o.superficiePotencial)}</td>
           <td>${formatNum(o.leads)}</td>
           <td>${formatMoney(o.ventaEstimada)}</td>
           <td>${formatMoney(o.ventaCerrada)}</td>
           <td class="nowrap">${formatDate(o.fechaVentaCerrada)}</td>
-          <td>${o.recompra || "No"}</td>
+          <td class="nowrap ${vencido ? 'red' : ''}">
+            <b>${o.proximaFechaSeguimiento ? formatDate(o.proximaFechaSeguimiento) : "N/D"}</b>
+          </td>
           <td>${o.responsableComercial || ""}</td>
           <td>
             <div class="actions" style="justify-content:center;">
@@ -536,6 +686,8 @@
     });
 
     calcularDashboard();
+    renderAlertasPerdidos();
+    renderAlertasSeguimiento();
   }
 
   function exportarExcel(){
@@ -544,22 +696,26 @@
     const data = oportunidades.map(o => {
       const e = ensayos.find(x => String(x.id) === String(o.ensayo)) || {};
       return {
-        "ID Ensayo": e.id || "",
+        "Folio Ensayo": e.id || "",
         "Cultivo": e.cultivo || "",
         "Variedad Tratada": e.variedad_tratada || "",
-        "Productor": e.productor || "",
+        "Productor Original": e.productor || "",
+        "Productor Nuevo": o.productorNuevo || "",
         "Región": e.region || "",
         "Fecha Registro": o.fechaRegistro || "",
         "Interesado": o.interesado || "",
         "Etapa": o.etapa || "",
         "Área Potencial (ha)": o.area || 0,
+        "Superficie Potencial Productor (ha)": o.superficiePotencial || 0,
         "Leads Generados": o.leads || 0,
         "Venta Estimada $": o.ventaEstimada || 0,
         "Venta Cerrada $": o.ventaCerrada || 0,
         "Fecha Venta Cerrada": o.fechaVentaCerrada || "",
+        "Próxima Fecha Seguimiento": o.proximaFechaSeguimiento || "",
         "Recompra": o.recompra || "No",
         "Responsable Comercial": o.responsableComercial || "",
         "Próximo Paso": o.proximoPaso || "",
+        "Seguimiento Vencido": isSeguimientoVencido(o) ? "Sí" : "No",
         "Fecha Registro ISO": o.fechaRegistroISO || "",
         "Fecha Actualización ISO": o.fechaActualizacionISO || ""
       };
@@ -569,11 +725,13 @@
       ["Productores interesados", resumen.productores],
       ["Leads generados", resumen.leadsTotal],
       ["Área potencial (ha)", resumen.areaTotal],
+      ["Superficie potencial productor (ha)", resumen.superficiePotencialTotal],
       ["Venta estimada", resumen.estimado],
       ["Venta cerrada", resumen.ventas],
       ["Conversión por valor (%)", resumen.conversionValor],
       ["Conversión de registros con venta (%)", resumen.conversionRegistros],
-      ["Registros con recompra", resumen.recompraCount]
+      ["Registros con recompra", resumen.recompraCount],
+      ["Seguimientos vencidos", resumen.seguimientoVencido]
     ];
 
     const ws1 = XLSX.utils.json_to_sheet(data);
