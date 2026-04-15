@@ -24,10 +24,11 @@
       background:var(--bg);
       color:var(--text);
       padding:20px;
+      margin:0;
     }
     h1{color:var(--primary);margin-top:0}
     h2,h3{margin-top:0}
-    .container{max-width:1200px;margin:auto}
+    .container{max-width:1280px;margin:auto}
     .card{
       background:var(--card);
       padding:20px;
@@ -61,6 +62,7 @@
       background:var(--primary);
       cursor:pointer;
       font-weight:700;
+      color:#082f49;
     }
     .save{background:var(--success);color:#fff}
     .delete{background:var(--danger);color:#fff}
@@ -83,7 +85,7 @@
     .kpi{
       font-size:18px;
       margin:8px 0;
-      line-height:1.4;
+      line-height:1.45;
     }
     .green{color:var(--success)}
     .red{color:var(--danger)}
@@ -96,10 +98,44 @@
       padding:16px;
       margin-top:12px;
     }
+    .mini{
+      background:#0b1220;
+      border:1px solid var(--line);
+      border-radius:10px;
+      padding:14px;
+    }
+    .mini b{
+      display:block;
+      font-size:20px;
+      color:var(--primary);
+      margin-top:4px;
+    }
+    .badge{
+      display:inline-block;
+      padding:4px 10px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:700;
+      border:1px solid var(--line);
+      background:#111827;
+      color:var(--muted);
+      margin-left:8px;
+    }
+    .context-box{
+      background:#0b1220;
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:16px;
+      margin-top:14px;
+    }
     hr{
       border:none;
       border-top:1px solid var(--line);
       margin:14px 0;
+    }
+    .empty{
+      color:var(--muted);
+      font-style:italic;
     }
   </style>
 </head>
@@ -119,7 +155,7 @@
   <h1>📊 Resultados de Ensayos</h1>
 
   <div class="card">
-    <h2 id="modo">Nuevo Resultado</h2>
+    <h2 id="modo">Nueva Evaluación</h2>
 
     <div class="grid">
       <div>
@@ -131,6 +167,8 @@
         <input type="date" id="fechaEvaluacion">
       </div>
     </div>
+
+    <div id="contextoEnsayo" class="context-box"></div>
 
     <h3 style="margin-top:20px;">Resultados Técnicos</h3>
     <div class="grid">
@@ -198,7 +236,7 @@
 
     <div class="actions">
       <button onclick="calcular()">Calcular + Evaluar</button>
-      <button class="save" onclick="guardar()">Guardar resultado</button>
+      <button class="save" onclick="guardar()">Guardar evaluación</button>
       <button class="edit" id="btnCancelar" onclick="cancelarEdicion()" style="display:none;">Cancelar edición</button>
       <button class="export" onclick="exportarExcel()">📊 Exportar Excel</button>
     </div>
@@ -207,8 +245,8 @@
   </div>
 
   <div class="card">
-    <h2>Resultados Guardados</h2>
-    <div class="muted">Nota: este archivo mantiene un resultado vigente por ensayo. Si guardas nuevamente el mismo ensayo, se actualiza.</div>
+    <h2>Historial de Evaluaciones</h2>
+    <div class="muted">Ahora se guardan múltiples evaluaciones por ensayo, con diferentes fechas.</div>
     <div id="lista"></div>
   </div>
 
@@ -265,23 +303,163 @@
     return isNaN(num) ? 0 : num;
   }
 
-  let ensayos = getData("ensayos");
-  let resultados = getData("resultados");
-  let editId = null;
-  let tmp = null;
-
-  function cargarEnsayos(){
-    $("ensayoSelect").innerHTML = "";
-    ensayos.forEach(e => {
-      $("ensayoSelect").innerHTML += `<option value="${e.id}">${ensayoLabel(e)}</option>`;
-    });
+  function parseSurfaceHa(value){
+    if(value === null || value === undefined) return 0;
+    const text = String(value).trim().toLowerCase().replace(/,/g, "");
+    const match = text.match(/(\d+(\.\d+)?)/);
+    return match ? parseFloat(match[1]) : 0;
   }
 
   function todayISO(){
     return new Date().toISOString().slice(0,10);
   }
 
-  function evaluar(roi, diferencia){
+  let ensayos = getData("ensayos");
+  let resultados = getData("resultados");
+  let oportunidades = getData("oportunidades");
+  let editId = null;
+  let tmp = null;
+
+  const metasROI = {
+    "tomate": 0.25,
+    "pimiento": 0.30,
+    "chile": 0.30,
+    "cebolla": 0.20,
+    "pepino": 0.25,
+    "calabaza": 0.22,
+    "sandia": 0.20,
+    "melón": 0.20
+  };
+
+  function getEnsayoById(id){
+    return ensayos.find(e => String(e.id) === String(id)) || null;
+  }
+
+  function getMetaROI(cultivo){
+    const key = String(cultivo || "").trim().toLowerCase();
+    return metasROI[key] ?? 0.30;
+  }
+
+  function getPotentialSurface(ensayoId){
+    const lista = oportunidades.filter(o => String(o.ensayo) === String(ensayoId));
+    return lista.reduce((acc, o) => {
+      return acc + Number(o.superficiePotencial || o.area || 0);
+    }, 0);
+  }
+
+  function countEvaluacionesEnsayo(ensayoId){
+    return resultados.filter(r => String(r.ensayo_id) === String(ensayoId)).length;
+  }
+
+  function cargarEnsayos(){
+    ensayos = getData("ensayos");
+    $("ensayoSelect").innerHTML = "";
+
+    ensayos.forEach(e => {
+      $("ensayoSelect").innerHTML += `<option value="${e.id}">${ensayoLabel(e)}</option>`;
+    });
+
+    if(ensayos.length){
+      mostrarContextoEnsayo();
+    } else {
+      $("contextoEnsayo").innerHTML = `<p class="empty">No hay ensayos capturados todavía.</p>`;
+    }
+  }
+
+  function mostrarContextoEnsayo(){
+    const ensayo = getEnsayoById($("ensayoSelect").value);
+
+    if(!ensayo){
+      $("contextoEnsayo").innerHTML = `<p class="empty">Selecciona un ensayo.</p>`;
+      return;
+    }
+
+    const superficieEnsayoHa = parseSurfaceHa(ensayo.superficie);
+    const superficiePotencial = getPotentialSurface(ensayo.id);
+    const metaROI = getMetaROI(ensayo.cultivo);
+    const evaluaciones = countEvaluacionesEnsayo(ensayo.id);
+
+    $("contextoEnsayo").innerHTML = `
+      <div class="grid">
+        <div class="mini">
+          <div>Folio</div>
+          <b>${ensayo.id}</b>
+        </div>
+        <div class="mini">
+          <div>Objetivo del ensayo</div>
+          <b style="font-size:16px;">${ensayo.objetivo || "Sin objetivo"}</b>
+        </div>
+        <div class="mini">
+          <div>Superficie del ensayo</div>
+          <b>${superficieEnsayoHa > 0 ? formatNum(superficieEnsayoHa) + " ha" : "No definida"}</b>
+        </div>
+        <div class="mini">
+          <div>Superficie potencial productor</div>
+          <b>${superficiePotencial > 0 ? formatNum(superficiePotencial) + " ha" : "N/D"}</b>
+        </div>
+        <div class="mini">
+          <div>Meta ROI cultivo</div>
+          <b>${formatPct(metaROI * 100)}</b>
+        </div>
+        <div class="mini">
+          <div>Evaluaciones históricas</div>
+          <b>${evaluaciones}</b>
+        </div>
+      </div>
+    `;
+  }
+
+  function analyzeObjective(objetivo, porcentaje, rendTratado, calidadComercial){
+    if(!objetivo || !String(objetivo).trim()){
+      return {
+        estado: "Sin objetivo definido",
+        clase: "muted",
+        detalle: "No existe objetivo capturado en la ficha del ensayo."
+      };
+    }
+
+    const txt = String(objetivo).toLowerCase();
+    const pctMatch = String(objetivo).match(/(\d+(?:[.,]\d+)?)\s*%/);
+    const tonMatch = String(objetivo).match(/(\d+(?:[.,]\d+)?)\s*(?:ton\/ha|t\/ha)/i);
+
+    if(pctMatch && (txt.includes("control") || txt.includes("mejor") || txt.includes("increment"))){
+      const meta = parseFloat(String(pctMatch[1]).replace(",", "."));
+      const cumplido = porcentaje >= meta;
+
+      return {
+        estado: cumplido ? "Cumplido" : "No cumplido",
+        clase: cumplido ? "green" : "red",
+        detalle: `Objetivo prometido: +${formatNum(meta)}% vs control | Resultado real: ${formatPct(porcentaje)}`
+      };
+    }
+
+    if(tonMatch && txt.includes("rend")){
+      const metaTon = parseFloat(String(tonMatch[1]).replace(",", "."));
+      const cumplido = rendTratado >= metaTon;
+
+      return {
+        estado: cumplido ? "Cumplido" : "No cumplido",
+        clase: cumplido ? "green" : "red",
+        detalle: `Objetivo prometido: ${formatNum(metaTon)} ton/ha | Resultado real: ${formatNum(rendTratado)} ton/ha`
+      };
+    }
+
+    if((txt.includes("calidad") || txt.includes("calibre")) && calidadComercial){
+      return {
+        estado: "Revisión cualitativa",
+        clase: "yellow",
+        detalle: `Objetivo prometido: ${objetivo} | Resultado capturado: ${calidadComercial}`
+      };
+    }
+
+    return {
+      estado: "Validación manual",
+      clase: "yellow",
+      detalle: `Objetivo prometido: ${objetivo} | Resultado real: ${formatPct(porcentaje)} de mejora`
+    };
+  }
+
+  function evaluar(roi, diferencia, metaROI){
     if(diferencia < 0){
       return {
         evaluacion: "No exitoso",
@@ -298,7 +476,7 @@
       };
     }
 
-    if(roi < 0.3){
+    if(roi < metaROI){
       return {
         evaluacion: "Parcial",
         recomendacion: "Ajustar variables",
@@ -314,6 +492,21 @@
   }
 
   function calcular(){
+    const ensayo = getEnsayoById($("ensayoSelect").value);
+    if(!ensayo){
+      alert("Selecciona un ensayo válido.");
+      return;
+    }
+
+    const superficieEnsayoHa = parseSurfaceHa(ensayo.superficie);
+    if(superficieEnsayoHa <= 0){
+      alert("La ficha del ensayo no tiene una superficie válida. Captura una superficie del ensayo en index.html para poder calcular el ROI real.");
+      return;
+    }
+
+    const superficiePotencialHa = getPotentialSurface(ensayo.id);
+    const metaROI = getMetaROI(ensayo.cultivo);
+
     const rc = parseNumber($("rendControl").value);
     const rt = parseNumber($("rendTratado").value);
 
@@ -334,15 +527,30 @@
     const costoHoras = hrs * costoHr;
     const diferencia = rt - rc;
     const porcentaje = rc ? (diferencia / rc) * 100 : 0;
-    const diferenciaKg = diferencia * 1000;
+    const diferenciaKgHa = diferencia * 1000;
     const margenUnitario = precioVal - costoProd;
-    const margen = diferenciaKg * margenUnitario;
-    const costoTotal = semillasVal + ins + mat + costoHoras + tras + otr;
-    const roi = costoTotal ? (margen - costoTotal) / costoTotal : 0;
 
-    const decision = evaluar(roi, diferencia);
+    const margenPorHa = diferenciaKgHa * margenUnitario;
+    const margenEnsayo = margenPorHa * superficieEnsayoHa;
+    const proyeccionPotencial = superficiePotencialHa > 0 ? margenPorHa * superficiePotencialHa : 0;
+
+    const costoTotal = semillasVal + ins + mat + costoHoras + tras + otr;
+    const roi = costoTotal ? (margenEnsayo - costoTotal) / costoTotal : 0;
+
+    const analisisObjetivo = analyzeObjective(
+      ensayo.objetivo,
+      porcentaje,
+      rt,
+      calidadComercial
+    );
+
+    const decision = evaluar(roi, diferencia, metaROI);
 
     tmp = {
+      objetivoEnsayo: ensayo.objetivo || "",
+      superficieEnsayoHa,
+      superficiePotencialHa,
+      metaROICultivo: metaROI,
       rendControl: rc,
       rendTratado: rt,
       calidadComercial,
@@ -358,25 +566,38 @@
       precio: precioVal,
       costoProduccion: costoProd,
       diferencia,
-      diferenciaKg,
+      diferenciaKgHa,
       porcentaje,
       margenUnitario,
-      margen,
+      margenPorHa,
+      margenEnsayo,
+      proyeccionPotencial,
       costoTotal,
       roi,
+      objetivoEstado: analisisObjetivo.estado,
+      objetivoDetalle: analisisObjetivo.detalle,
+      objetivoClase: analisisObjetivo.clase,
       ...decision
     };
 
-    const roiClass = roi >= 0.3 ? "green" : roi >= 0 ? "yellow" : "red";
+    const roiClass = roi >= metaROI ? "green" : roi >= 0 ? "yellow" : "red";
 
     $("kpis").innerHTML = `
+      <div class="kpi">🎯 Objetivo del ensayo: <b>${ensayo.objetivo || "Sin objetivo"}</b></div>
+      <div class="kpi ${analisisObjetivo.clase}">Objetivo prometido vs resultado real: <b>${analisisObjetivo.estado}</b></div>
+      <div class="kpi ${analisisObjetivo.clase}">${analisisObjetivo.detalle}</div>
+      <hr>
       <div class="kpi">📈 Diferencia: <b>${formatNum(diferencia)} ton/ha</b></div>
       <div class="kpi">📊 Mejora vs control: <b>${formatPct(porcentaje)}</b></div>
       <div class="kpi">🌾 Rendimiento tratado: <b>${formatNum(rt)} ton/ha</b></div>
       <div class="kpi">🌱 Rendimiento control: <b>${formatNum(rc)} ton/ha</b></div>
-      <div class="kpi">💰 Margen incremental: <b>${formatMoney(margen)}</b></div>
+      <div class="kpi">📏 Superficie ensayo: <b>${formatNum(superficieEnsayoHa)} ha</b></div>
+      <div class="kpi">📏 Superficie potencial productor: <b>${superficiePotencialHa > 0 ? formatNum(superficiePotencialHa) + " ha" : "N/D"}</b></div>
+      <div class="kpi">💰 Margen incremental por ha: <b>${formatMoney(margenPorHa)}</b></div>
+      <div class="kpi">💰 Margen incremental total del ensayo: <b>${formatMoney(margenEnsayo)}</b></div>
+      <div class="kpi">🚀 Impacto potencial proyectado: <b>${superficiePotencialHa > 0 ? formatMoney(proyeccionPotencial) : "N/D"}</b></div>
       <div class="kpi">💸 Costo total ensayo: <b>${formatMoney(costoTotal)}</b></div>
-      <div class="kpi ${roiClass}">ROI: <b>${formatPct(roi * 100)}</b></div>
+      <div class="kpi ${roiClass}">ROI real del ensayo: <b>${formatPct(roi * 100)}</b> <span class="badge">Meta cultivo: ${formatPct(metaROI * 100)}</span></div>
       <hr>
       <div class="kpi">📊 Evaluación: <b>${decision.evaluacion}</b></div>
       <div class="kpi">🧠 Recomendación: <b>${decision.recomendacion}</b></div>
@@ -387,7 +608,7 @@
   function limpiarFormulario(){
     editId = null;
     tmp = null;
-    $("modo").innerText = "Nuevo Resultado";
+    $("modo").innerText = "Nueva Evaluación";
     $("btnCancelar").style.display = "none";
     $("fechaEvaluacion").value = todayISO();
 
@@ -398,6 +619,7 @@
     ].forEach(id => $(id).value = "");
 
     $("kpis").innerHTML = "";
+    mostrarContextoEnsayo();
   }
 
   function cancelarEdicion(){
@@ -420,47 +642,30 @@
     $("precio").value = r.precio ?? "";
     $("costoProduccion").value = r.costoProduccion ?? "";
 
-    tmp = {
-      rendControl: Number(r.rendControl || 0),
-      rendTratado: Number(r.rendTratado || 0),
-      calidadComercial: r.calidadComercial || "",
-      incidenciaPlaga: Number(r.incidenciaPlaga || 0),
-      semillas: Number(r.semillas || 0),
-      insumos: Number(r.insumos || 0),
-      material: Number(r.material || 0),
-      horas: Number(r.horas || 0),
-      costoHora: Number(r.costoHora || 0),
-      costoHoras: Number(r.costoHoras || 0),
-      traslados: Number(r.traslados || 0),
-      otros: Number(r.otros || 0),
-      precio: Number(r.precio || 0),
-      costoProduccion: Number(r.costoProduccion || 0),
-      diferencia: Number(r.diferencia || 0),
-      diferenciaKg: Number(r.diferenciaKg || 0),
-      porcentaje: Number(r.porcentaje || 0),
-      margenUnitario: Number(r.margenUnitario || 0),
-      margen: Number(r.margen || 0),
-      costoTotal: Number(r.costoTotal || 0),
-      roi: Number(r.roi || 0),
-      evaluacion: r.evaluacion || "",
-      recomendacion: r.recomendacion || "",
-      repetir: r.repetir || ""
-    };
+    tmp = { ...r };
 
-    const roiClass = tmp.roi >= 0.3 ? "green" : tmp.roi >= 0 ? "yellow" : "red";
+    const roiClass = Number(r.roi || 0) >= Number(r.metaROICultivo || 0.3) ? "green" : Number(r.roi || 0) >= 0 ? "yellow" : "red";
 
     $("kpis").innerHTML = `
-      <div class="kpi">📈 Diferencia: <b>${formatNum(tmp.diferencia)} ton/ha</b></div>
-      <div class="kpi">📊 Mejora vs control: <b>${formatPct(tmp.porcentaje)}</b></div>
-      <div class="kpi">🌾 Rendimiento tratado: <b>${formatNum(tmp.rendTratado)} ton/ha</b></div>
-      <div class="kpi">🌱 Rendimiento control: <b>${formatNum(tmp.rendControl)} ton/ha</b></div>
-      <div class="kpi">💰 Margen incremental: <b>${formatMoney(tmp.margen)}</b></div>
-      <div class="kpi">💸 Costo total ensayo: <b>${formatMoney(tmp.costoTotal)}</b></div>
-      <div class="kpi ${roiClass}">ROI: <b>${formatPct(tmp.roi * 100)}</b></div>
+      <div class="kpi">🎯 Objetivo del ensayo: <b>${r.objetivoEnsayo || "Sin objetivo"}</b></div>
+      <div class="kpi ${r.objetivoClase || 'yellow'}">Objetivo prometido vs resultado real: <b>${r.objetivoEstado || "N/D"}</b></div>
+      <div class="kpi ${r.objetivoClase || 'yellow'}">${r.objetivoDetalle || ""}</div>
       <hr>
-      <div class="kpi">📊 Evaluación: <b>${tmp.evaluacion}</b></div>
-      <div class="kpi">🧠 Recomendación: <b>${tmp.recomendacion}</b></div>
-      <div class="kpi">🔁 Repetir ensayo: <b>${tmp.repetir}</b></div>
+      <div class="kpi">📈 Diferencia: <b>${formatNum(r.diferencia)} ton/ha</b></div>
+      <div class="kpi">📊 Mejora vs control: <b>${formatPct(r.porcentaje)}</b></div>
+      <div class="kpi">🌾 Rendimiento tratado: <b>${formatNum(r.rendTratado)} ton/ha</b></div>
+      <div class="kpi">🌱 Rendimiento control: <b>${formatNum(r.rendControl)} ton/ha</b></div>
+      <div class="kpi">📏 Superficie ensayo: <b>${formatNum(r.superficieEnsayoHa || 0)} ha</b></div>
+      <div class="kpi">📏 Superficie potencial productor: <b>${Number(r.superficiePotencialHa || 0) > 0 ? formatNum(r.superficiePotencialHa) + " ha" : "N/D"}</b></div>
+      <div class="kpi">💰 Margen incremental por ha: <b>${formatMoney(r.margenPorHa)}</b></div>
+      <div class="kpi">💰 Margen incremental total del ensayo: <b>${formatMoney(r.margenEnsayo)}</b></div>
+      <div class="kpi">🚀 Impacto potencial proyectado: <b>${Number(r.superficiePotencialHa || 0) > 0 ? formatMoney(r.proyeccionPotencial) : "N/D"}</b></div>
+      <div class="kpi">💸 Costo total ensayo: <b>${formatMoney(r.costoTotal)}</b></div>
+      <div class="kpi ${roiClass}">ROI real del ensayo: <b>${formatPct(Number(r.roi || 0) * 100)}</b> <span class="badge">Meta cultivo: ${formatPct(Number(r.metaROICultivo || 0.3) * 100)}</span></div>
+      <hr>
+      <div class="kpi">📊 Evaluación: <b>${r.evaluacion || ""}</b></div>
+      <div class="kpi">🧠 Recomendación: <b>${r.recomendacion || ""}</b></div>
+      <div class="kpi">🔁 Repetir ensayo: <b>${r.repetir || ""}</b></div>
     `;
   }
 
@@ -479,19 +684,17 @@
     const nowIso = new Date().toISOString();
     const fechaEvaluacion = $("fechaEvaluacion").value || todayISO();
 
-    const existente = resultados.find(r => String(r.ensayo_id) === String(ensayoId));
-
     const data = {
-      id: existente ? existente.id : (editId || Date.now()),
+      id: editId || Date.now(),
       ensayo_id: ensayoId,
       fechaEvaluacion,
-      fechaISO: existente ? (existente.fechaISO || nowIso) : nowIso,
+      fechaISO: editId ? (resultados.find(r => r.id === editId)?.fechaISO || nowIso) : nowIso,
       fechaActualizacionISO: nowIso,
       ...tmp
     };
 
-    if(existente){
-      resultados = resultados.map(r => String(r.ensayo_id) === String(ensayoId) ? data : r);
+    if(editId){
+      resultados = resultados.map(r => r.id === editId ? data : r);
     } else {
       resultados.push(data);
     }
@@ -500,6 +703,7 @@
     render();
     limpiarFormulario();
     $("ensayoSelect").value = ensayoId;
+    mostrarContextoEnsayo();
   }
 
   function editar(id){
@@ -507,18 +711,20 @@
     if(!r) return;
 
     editId = id;
-    $("modo").innerText = "Editar Resultado";
+    $("modo").innerText = "Editar Evaluación";
     $("btnCancelar").style.display = "inline-block";
     $("ensayoSelect").value = r.ensayo_id;
+    mostrarContextoEnsayo();
     cargarResultadoEnFormulario(r);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function eliminar(id){
-    if(!confirm("¿Eliminar este resultado?")) return;
+    if(!confirm("¿Eliminar esta evaluación?")) return;
     resultados = resultados.filter(r => r.id !== id);
     saveData("resultados", resultados);
     render();
+    mostrarContextoEnsayo();
   }
 
   function render(){
@@ -526,30 +732,40 @@
 
     const ordenados = resultados
       .slice()
-      .sort((a,b) => String(b.fechaActualizacionISO || b.fechaISO || "").localeCompare(String(a.fechaActualizacionISO || a.fechaISO || "")));
+      .sort((a,b) => {
+        const fa = String(a.fechaEvaluacion || a.fechaActualizacionISO || "");
+        const fb = String(b.fechaEvaluacion || b.fechaActualizacionISO || "");
+        return fb.localeCompare(fa);
+      });
 
     if(!ordenados.length){
-      $("lista").innerHTML = `<p class="muted">Aún no hay resultados guardados.</p>`;
+      $("lista").innerHTML = `<p class="muted">Aún no hay evaluaciones guardadas.</p>`;
       return;
     }
 
     ordenados.forEach(r => {
       const e = ensayos.find(x => String(x.id) === String(r.ensayo_id)) || {};
-      const roiClass = Number(r.roi || 0) >= 0.3 ? "green" : Number(r.roi || 0) >= 0 ? "yellow" : "red";
+      const roiClass = Number(r.roi || 0) >= Number(r.metaROICultivo || 0.3) ? "green" : Number(r.roi || 0) >= 0 ? "yellow" : "red";
 
       $("lista").innerHTML += `
         <div class="result-card">
-          <h3>${ensayoLabel(e)}</h3>
-          <p class="muted">Fecha evaluación: ${formatDate(r.fechaEvaluacion)}</p>
+          <h3>${ensayoLabel(e)} <span class="badge">Evaluación ${formatDate(r.fechaEvaluacion)}</span></h3>
+          <p class="muted">Objetivo: ${r.objetivoEnsayo || "Sin objetivo"}</p>
+
+          <p class="${r.objetivoClase || 'yellow'}">🎯 <b>${r.objetivoEstado || "N/D"}</b> — ${r.objetivoDetalle || ""}</p>
 
           <p>🌾 Rendimiento tratado: <b>${formatNum(r.rendTratado)} ton/ha</b></p>
           <p>🌱 Rendimiento control: <b>${formatNum(r.rendControl)} ton/ha</b></p>
           <p>📈 Diferencia: <b>${formatNum(r.diferencia)} ton/ha</b></p>
           <p>📊 Mejora: <b>${formatPct(r.porcentaje)}</b></p>
 
-          <p>💰 Margen incremental: <b>${formatMoney(r.margen)}</b></p>
+          <p>📏 Superficie ensayo: <b>${formatNum(r.superficieEnsayoHa || 0)} ha</b></p>
+          <p>💰 Margen por ha: <b>${formatMoney(r.margenPorHa)}</b></p>
+          <p>💰 Margen total ensayo: <b>${formatMoney(r.margenEnsayo)}</b></p>
+          <p>🚀 Impacto potencial: <b>${Number(r.superficiePotencialHa || 0) > 0 ? formatMoney(r.proyeccionPotencial) : "N/D"}</b></p>
+
           <p>💸 Costo total: <b>${formatMoney(r.costoTotal)}</b></p>
-          <p class="${roiClass}">ROI: <b>${formatPct(Number(r.roi || 0) * 100)}</b></p>
+          <p class="${roiClass}">ROI real: <b>${formatPct(Number(r.roi || 0) * 100)}</b></p>
 
           <hr>
 
@@ -572,16 +788,21 @@
     const data = resultados.map(r => {
       const e = ensayos.find(x => String(x.id) === String(r.ensayo_id)) || {};
       return {
-        "ID Ensayo": e.id || "",
+        "Folio Ensayo": e.id || "",
         "Cultivo": e.cultivo || "",
         "Variedad Tratada": e.variedad_tratada || "",
         "Productor": e.productor || "",
         "Región": e.region || "",
         "Fecha Evaluación": r.fechaEvaluacion || "",
+        "Objetivo Ensayo": r.objetivoEnsayo || "",
+        "Estado Objetivo": r.objetivoEstado || "",
+        "Detalle Objetivo": r.objetivoDetalle || "",
+        "Superficie Ensayo (ha)": r.superficieEnsayoHa || 0,
+        "Superficie Potencial Productor (ha)": r.superficiePotencialHa || 0,
         "Rendimiento Control (ton/ha)": r.rendControl || 0,
         "Rendimiento Tratado (ton/ha)": r.rendTratado || 0,
         "Diferencia (ton/ha)": r.diferencia || 0,
-        "Diferencia (kg/ha)": r.diferenciaKg || 0,
+        "Diferencia (kg/ha)": r.diferenciaKgHa || 0,
         "% Mejora": r.porcentaje || 0,
         "Calidad Comercial": r.calidadComercial || "",
         "Incidencia Plaga %": r.incidenciaPlaga || 0,
@@ -597,7 +818,10 @@
         "Precio por kg $": r.precio || 0,
         "Costo Producción por kg $": r.costoProduccion || 0,
         "Margen Unitario $": r.margenUnitario || 0,
-        "Margen Incremental $": r.margen || 0,
+        "Margen por ha $": r.margenPorHa || 0,
+        "Margen total ensayo $": r.margenEnsayo || 0,
+        "Impacto potencial proyectado $": r.proyeccionPotencial || 0,
+        "Meta ROI Cultivo": r.metaROICultivo || 0,
         "ROI": r.roi || 0,
         "Evaluación": r.evaluacion || "",
         "Recomendación": r.recomendacion || "",
@@ -612,6 +836,12 @@
     XLSX.utils.book_append_sheet(wb, ws, "Resultados");
     XLSX.writeFile(wb, "Resultados_Ensayos_Galera_Ajustado.xlsx");
   }
+
+  $("ensayoSelect").addEventListener("change", () => {
+    mostrarContextoEnsayo();
+    $("kpis").innerHTML = "";
+    tmp = null;
+  });
 
   cargarEnsayos();
   $("fechaEvaluacion").value = todayISO();
