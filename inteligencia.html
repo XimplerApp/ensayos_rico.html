@@ -193,7 +193,7 @@
     .popup{
       color:#111827;
       line-height:1.4;
-      min-width:220px;
+      min-width:240px;
     }
 
     .popup b{
@@ -219,7 +219,7 @@
   <div class="card">
     <div class="section-title">
       <h2>Filtros</h2>
-      <span class="badge">Aplican a tablas, ranking, RICE y mapa</span>
+      <span class="badge">Aplican a mapa, ranking, tabla y prioridad</span>
     </div>
 
     <div class="grid">
@@ -258,7 +258,7 @@
   <div class="card">
     <div class="section-title">
       <h2>🗺 Mapa Estratégico de Ensayos</h2>
-      <span class="badge">Usa la última geolocalización disponible por ensayo</span>
+      <span class="badge">Geo real si existe; región inferida si no</span>
     </div>
     <div id="map"></div>
   </div>
@@ -266,7 +266,7 @@
   <div class="card">
     <div class="section-title">
       <h2>🏆 Ranking de Variedades</h2>
-      <span class="badge">Agrupado por variedad tratada</span>
+      <span class="badge">Ordenado por prioridad comparable</span>
     </div>
     <table id="ranking"></table>
   </div>
@@ -281,8 +281,8 @@
 
   <div class="card">
     <div class="section-title">
-      <h2>⚡ Motor de Prioridad (RICE)</h2>
-      <span class="badge">Usa leads, ventas, ROI y costo total</span>
+      <h2>⚡ Motor de Prioridad (RICE Normalizado)</h2>
+      <span class="badge">Dimensiones 1 a 5 comparables</span>
     </div>
     <div id="rice"></div>
   </div>
@@ -318,6 +318,13 @@
     const d = new Date(iso + "T00:00:00");
     if(isNaN(d)) return iso;
     return d.toLocaleDateString("es-MX");
+  }
+
+  function parseSurfaceHa(value){
+    if(value === null || value === undefined) return 0;
+    const txt = String(value).toLowerCase().replace(/,/g, "");
+    const match = txt.match(/(\d+(\.\d+)?)/);
+    return match ? parseFloat(match[1]) : 0;
   }
 
   function ensayoLabel(e){
@@ -429,14 +436,180 @@
   }
 
   function getROIClass(roi){
-    if(roi >= 0.3) return "green";
+    if(roi >= 0.30) return "green";
     if(roi >= 0) return "yellow";
     return "red";
+  }
+
+  function regionReferenceCoords(region){
+    const txt = String(region || "").toLowerCase();
+
+    const catalog = [
+      { keys:["culiacan","culiacán","sinaloa","noroeste"], coords:[24.8091,-107.3940] },
+      { keys:["sonora","hermosillo"], coords:[29.0729,-110.9559] },
+      { keys:["baja","tijuana","mexicali"], coords:[32.5149,-117.0382] },
+      { keys:["bajio","bajío","guanajuato","queretaro","querétaro","irapuato","celaya"], coords:[20.6767,-101.3563] },
+      { keys:["jalisco","occidente","guadalajara"], coords:[20.6597,-103.3496] },
+      { keys:["chihuahua","coahuila","durango","norte"], coords:[28.6353,-106.0889] },
+      { keys:["nuevo leon","nuevo león","monterrey","tamaulipas"], coords:[25.6866,-100.3161] },
+      { keys:["centro","cdmx","ciudad de mexico","ciudad de méxico","estado de mexico","estado de méxico","puebla","hidalgo","morelos","tlaxcala"], coords:[19.4326,-99.1332] },
+      { keys:["veracruz","golfo"], coords:[19.1738,-96.1342] },
+      { keys:["oaxaca","chiapas","sureste","tabasco"], coords:[17.0732,-96.7266] },
+      { keys:["yucatan","yucatán","merida","mérida","campeche","quintana roo"], coords:[20.9674,-89.5926] }
+    ];
+
+    for(const item of catalog){
+      if(item.keys.some(k => txt.includes(k))) return item.coords;
+    }
+
+    return [23.6345, -102.5528];
+  }
+
+  function inferredCoords(region, regionalIndex){
+    const base = regionReferenceCoords(region);
+    const stepLat = 0.18;
+    const stepLng = 0.18;
+    const x = (regionalIndex % 5) - 2;
+    const y = (Math.floor(regionalIndex / 5) % 5) - 2;
+    return [
+      base[0] + (x * stepLat),
+      base[1] + (y * stepLng)
+    ];
+  }
+
+  function aggregateVarieties(filteredEnsayos){
+    const resultadosMap = latestResultadosMap();
+    const grouped = {};
+
+    filteredEnsayos.forEach(e => {
+      const key = e.variedad_tratada || "Sin variedad";
+      const r = resultadosMap[String(e.id)] || null;
+      const ops = opportunitiesByEnsayo(e.id);
+
+      if(!grouped[key]){
+        grouped[key] = {
+          variedad: key,
+          ensayos: 0,
+          cultivos: new Set(),
+          regiones: new Set(),
+          ventas: 0,
+          leads: 0,
+          estimado: 0,
+          superficiePotencial: 0,
+          superficieEnsayo: 0,
+          costoSum: 0,
+          costoCount: 0,
+          roiSum: 0,
+          roiCount: 0,
+          proyeccionSum: 0,
+          proyeccionCount: 0,
+          adopcionCount: 0
+        };
+      }
+
+      const g = grouped[key];
+      g.ensayos++;
+      g.cultivos.add(e.cultivo || "");
+      g.regiones.add(e.region || "");
+
+      const ventas = ops.reduce((a,b) => a + Number(b.ventaCerrada || 0), 0);
+      const leads = ops.reduce((a,b) => a + Number(b.leads || 0), 0);
+      const estimado = ops.reduce((a,b) => a + Number(b.ventaEstimada || 0), 0);
+      const supPot = ops.reduce((a,b) => a + Number(b.superficiePotencial || b.area || 0), 0);
+
+      g.ventas += ventas;
+      g.leads += leads;
+      g.estimado += estimado;
+      g.superficiePotencial += supPot;
+      g.superficieEnsayo += parseSurfaceHa(e.superficie);
+
+      if(ventas > 0) g.adopcionCount++;
+
+      if(r){
+        const costo = Number(r.costoTotal || 0);
+        const roi = Number(r.roi || 0);
+        const proy = Number(r.proyeccionPotencial || r.margenEnsayo || r.margen || 0);
+
+        if(!isNaN(costo) && costo > 0){
+          g.costoSum += costo;
+          g.costoCount++;
+        }
+        if(!isNaN(roi)){
+          g.roiSum += roi;
+          g.roiCount++;
+        }
+        if(!isNaN(proy) && proy > 0){
+          g.proyeccionSum += proy;
+          g.proyeccionCount++;
+        }
+      }
+    });
+
+    const arr = Object.values(grouped).map(g => {
+      const roiProm = g.roiCount ? g.roiSum / g.roiCount : 0;
+      const adopcionPct = g.ensayos ? (g.adopcionCount / g.ensayos) * 100 : 0;
+      const conversionValor = g.estimado > 0 ? (g.ventas / g.estimado) * 100 : 0;
+      const leadsPorEnsayo = g.ensayos ? g.leads / g.ensayos : 0;
+      const costoProm = g.costoCount ? g.costoSum / g.costoCount : 0;
+
+      const economicBase = g.proyeccionCount
+        ? (g.proyeccionSum / g.proyeccionCount)
+        : g.ventas;
+
+      const impactPerHa = (g.superficiePotencial > 0)
+        ? (economicBase / g.superficiePotencial)
+        : ((g.superficieEnsayo > 0) ? (economicBase / g.superficieEnsayo) : economicBase);
+
+      const reachRaw = leadsPorEnsayo;
+      const impactRaw = impactPerHa;
+      const confidenceRaw = (Math.max(roiProm, 0) * 100 * 0.7) + ((Math.min(g.ensayos, 4) / 4) * 30);
+      const effortRaw = costoProm;
+
+      return {
+        ...g,
+        roiProm,
+        adopcionPct,
+        conversionValor,
+        leadsPorEnsayo,
+        costoProm,
+        impactPerHa,
+        reachRaw,
+        impactRaw,
+        confidenceRaw,
+        effortRaw
+      };
+    });
+
+    function normalize(values, value, invert=false){
+      const cleaned = values.filter(v => isFinite(v));
+      if(!cleaned.length) return 3;
+      const min = Math.min(...cleaned);
+      const max = Math.max(...cleaned);
+      if(max === min) return 3;
+      const ratio = invert ? (max - value) / (max - min) : (value - min) / (max - min);
+      return 1 + (4 * ratio);
+    }
+
+    const reachValues = arr.map(x => x.reachRaw);
+    const impactValues = arr.map(x => x.impactRaw);
+    const confidenceValues = arr.map(x => x.confidenceRaw);
+    const effortValues = arr.map(x => x.effortRaw);
+
+    arr.forEach(x => {
+      x.reachScore = normalize(reachValues, x.reachRaw, false);
+      x.impactScore = normalize(impactValues, x.impactRaw, false);
+      x.confidenceScore = normalize(confidenceValues, x.confidenceRaw, false);
+      x.effortScore = normalize(effortValues, x.effortRaw, true);
+      x.priorityScore = (x.reachScore * x.impactScore * x.confidenceScore) / x.effortScore;
+    });
+
+    return arr.sort((a,b) => b.priorityScore - a.priorityScore);
   }
 
   function renderResumen(){
     const lista = getFilteredEnsayos();
     const resultadosMap = latestResultadosMap();
+    const bitacoraMap = latestBitacoraMap();
 
     const ensayosConResultado = lista.filter(e => resultadosMap[String(e.id)]).length;
     const ensayosConVenta = lista.filter(e => {
@@ -458,6 +631,9 @@
     const roiProm = roiValues.length
       ? roiValues.reduce((a,b) => a + b, 0) / roiValues.length
       : 0;
+
+    const geoReal = lista.filter(e => bitacoraMap[String(e.id)]).length;
+    const geoInferida = Math.max(lista.length - geoReal, 0);
 
     document.getElementById("resumenEstrategico").innerHTML = `
       <div class="mini">
@@ -484,6 +660,14 @@
         <span>ROI promedio</span>
         <b>${pct(roiProm * 100)}</b>
       </div>
+      <div class="mini">
+        <span>Marcadores con geo real</span>
+        <b>${geoReal}</b>
+      </div>
+      <div class="mini">
+        <span>Marcadores inferidos</span>
+        <b>${geoInferida}</b>
+      </div>
     `;
   }
 
@@ -495,16 +679,31 @@
     const bitacoraMap = latestBitacoraMap();
 
     const bounds = [];
+    const usageByRegion = {};
 
     lista.forEach(e => {
       const b = bitacoraMap[String(e.id)];
-      if(!b) return;
-
       const r = resultadosMap[String(e.id)] || {};
       const ops = opportunitiesByEnsayo(e.id);
       const leads = ops.reduce((a,x) => a + Number(x.leads || 0), 0);
       const ventas = ops.reduce((a,x) => a + Number(x.ventaCerrada || 0), 0);
       const roi = Number(r.roi || 0);
+
+      let lat, lng, geoSource;
+
+      if(b){
+        lat = b.lat;
+        lng = b.lng;
+        geoSource = "Geo real de bitácora";
+      } else {
+        const regionKey = e.region || "Sin región";
+        usageByRegion[regionKey] = (usageByRegion[regionKey] || 0);
+        const coords = inferredCoords(regionKey, usageByRegion[regionKey]);
+        usageByRegion[regionKey]++;
+        lat = coords[0];
+        lng = coords[1];
+        geoSource = "Ubicación inferida por región";
+      }
 
       const popup = `
         <div class="popup">
@@ -516,7 +715,8 @@
           ROI: ${pct(roi * 100)}<br>
           Leads: ${num(leads)}<br>
           Venta cerrada: ${money(ventas)}<br>
-          Productor: ${e.productor || "N/D"}
+          Productor: ${e.productor || "N/D"}<br>
+          Ubicación: ${geoSource}
         </div>
       `;
 
@@ -524,18 +724,20 @@
       if(roi >= 0.3) markerColor = "green";
       else if(roi >= 0) markerColor = "orange";
 
+      const borderColor = geoSource.includes("real") ? "#ffffff" : "#94a3b8";
+
       const icon = L.divIcon({
         className: "custom-div-icon",
-        html: `<div style="background:${markerColor};width:14px;height:14px;border-radius:50%;border:2px solid white;"></div>`,
+        html: `<div style="background:${markerColor};width:14px;height:14px;border-radius:50%;border:2px solid ${borderColor};opacity:${geoSource.includes("real") ? 1 : 0.85};"></div>`,
         iconSize: [14,14],
         iconAnchor: [7,7]
       });
 
-      L.marker([b.lat, b.lng], { icon })
+      L.marker([lat, lng], { icon })
         .addTo(markerLayer)
         .bindPopup(popup);
 
-      bounds.push([b.lat, b.lng]);
+      bounds.push([lat, lng]);
     });
 
     if(bounds.length){
@@ -608,42 +810,7 @@
 
   function renderRanking(){
     const lista = getFilteredEnsayos();
-    const resultadosMap = latestResultadosMap();
-
-    const variedades = {};
-
-    lista.forEach(e => {
-      const variedad = e.variedad_tratada || "Sin variedad";
-      const r = resultadosMap[String(e.id)] || null;
-      const ops = opportunitiesByEnsayo(e.id);
-
-      const ventas = ops.reduce((a,b) => a + Number(b.ventaCerrada || 0), 0);
-      const leads = ops.reduce((a,b) => a + Number(b.leads || 0), 0);
-      const tieneVenta = ventas > 0 ? 1 : 0;
-
-      if(!variedades[variedad]){
-        variedades[variedad] = {
-          ensayos: 0,
-          roiSum: 0,
-          roiCount: 0,
-          ventas: 0,
-          leads: 0,
-          adopcionCount: 0,
-          cultivos: new Set()
-        };
-      }
-
-      variedades[variedad].ensayos++;
-      variedades[variedad].ventas += ventas;
-      variedades[variedad].leads += leads;
-      variedades[variedad].adopcionCount += tieneVenta;
-      variedades[variedad].cultivos.add(e.cultivo || "");
-
-      if(r && typeof r.roi === "number"){
-        variedades[variedad].roiSum += Number(r.roi || 0);
-        variedades[variedad].roiCount++;
-      }
-    });
+    const variedades = aggregateVarieties(lista);
 
     let html = `
       <tr>
@@ -651,34 +818,27 @@
         <th>Cultivos</th>
         <th>Ensayos</th>
         <th>ROI promedio</th>
-        <th>Leads</th>
+        <th>Leads/ensayo</th>
         <th>Ventas</th>
         <th>Adopción</th>
+        <th>Prioridad</th>
       </tr>
     `;
 
-    const entries = Object.entries(variedades)
-      .map(([variedad, data]) => ({
-        variedad,
-        ...data,
-        roiProm: data.roiCount ? data.roiSum / data.roiCount : 0,
-        adopcionReal: data.ensayos ? data.adopcionCount / data.ensayos : 0
-      }))
-      .sort((a,b) => b.roiProm - a.roiProm);
-
-    if(!entries.length){
+    if(!variedades.length){
       html += `
         <tr>
-          <td colspan="7" class="empty">No hay información suficiente para ranking.</td>
+          <td colspan="8" class="empty">No hay información suficiente para ranking.</td>
         </tr>
       `;
       document.getElementById("ranking").innerHTML = html;
       return;
     }
 
-    entries.forEach(item => {
-      const nivel = item.adopcionReal > 0.6 ? "Alta" : item.adopcionReal > 0.3 ? "Media" : "Baja";
+    variedades.forEach(item => {
+      const nivel = item.adopcionPct > 60 ? "Alta" : item.adopcionPct > 30 ? "Media" : "Baja";
       const roiClass = getROIClass(item.roiProm);
+      const scoreClass = item.priorityScore >= 12 ? "green" : item.priorityScore >= 7 ? "yellow" : "red";
 
       html += `
         <tr>
@@ -686,9 +846,10 @@
           <td>${[...item.cultivos].filter(Boolean).join(", ") || "N/D"}</td>
           <td>${item.ensayos}</td>
           <td class="${roiClass}"><b>${pct(item.roiProm * 100)}</b></td>
-          <td>${num(item.leads)}</td>
+          <td>${num(item.leadsPorEnsayo)}</td>
           <td>${money(item.ventas)}</td>
-          <td>${nivel} (${pct(item.adopcionReal * 100)})</td>
+          <td>${nivel} (${pct(item.adopcionPct)})</td>
+          <td class="${scoreClass}"><b>${num(item.priorityScore)}</b></td>
         </tr>
       `;
     });
@@ -698,91 +859,46 @@
 
   function renderRICE(){
     const lista = getFilteredEnsayos();
-    const resultadosMap = latestResultadosMap();
+    const variedades = aggregateVarieties(lista);
 
-    const variedades = {};
+    if(!variedades.length){
+      document.getElementById("rice").innerHTML = `<p class="empty">No hay información suficiente para calcular prioridad comparable.</p>`;
+      return;
+    }
 
-    lista.forEach(e => {
-      const variedad = e.variedad_tratada || "Sin variedad";
-      const r = resultadosMap[String(e.id)] || null;
-      const ops = opportunitiesByEnsayo(e.id);
+    const bloques = variedades.map(v => {
+      let decision = "";
+      let texto = "";
+      let color = "";
 
-      const leads = ops.reduce((a,b) => a + Number(b.leads || 0), 0);
-      const ventas = ops.reduce((a,b) => a + Number(b.ventaCerrada || 0), 0);
-      const roi = r ? Number(r.roi || 0) : 0;
-      const costo = r ? Number(r.costoTotal || 0) : 0;
-
-      if(!variedades[variedad]){
-        variedades[variedad] = {
-          reach: 0,
-          impact: 0,
-          confidenceSum: 0,
-          confidenceCount: 0,
-          effort: 0,
-          ensayos: 0
-        };
+      if(v.priorityScore >= 12){
+        decision = "🚀 ESCALAR";
+        texto = "Prioridad alta. Buen balance entre alcance, impacto, confianza y esfuerzo.";
+        color = "green";
+      } else if(v.priorityScore >= 7){
+        decision = "⚙️ OPTIMIZAR";
+        texto = "Potencial interesante, pero aún conviene reforzar evidencia o eficiencia.";
+        color = "yellow";
+      } else {
+        decision = "⛔ REVISAR";
+        texto = "Prioridad baja hoy. Requiere replantear enfoque o detener inversión adicional.";
+        color = "red";
       }
 
-      variedades[variedad].reach += leads;
-      variedades[variedad].impact += ventas;
-      variedades[variedad].effort += costo;
-      variedades[variedad].ensayos++;
+      return `
+        <div class="list-block">
+          <div class="kpi"><b>${v.variedad}</b></div>
+          <div class="kpi">Reach normalizado (leads/ensayo): <b>${num(v.reachScore)}</b> <span class="badge">Raw: ${num(v.leadsPorEnsayo)}</span></div>
+          <div class="kpi">Impact normalizado (impacto/ha): <b>${num(v.impactScore)}</b> <span class="badge">Raw: ${money(v.impactPerHa)}</span></div>
+          <div class="kpi">Confidence normalizado (ROI + evidencia): <b>${num(v.confidenceScore)}</b> <span class="badge">ROI: ${pct(v.roiProm * 100)}</span></div>
+          <div class="kpi">Effort normalizado (costo promedio): <b>${num(v.effortScore)}</b> <span class="badge">Raw: ${money(v.costoProm)}</span></div>
+          <div class="kpi ${color}">Score RICE normalizado: <b>${num(v.priorityScore)}</b> | ${decision}</div>
+          <div class="kpi muted">${texto}</div>
+        </div>
+      `;
+    }).join("");
 
-      if(r){
-        variedades[variedad].confidenceSum += roi;
-        variedades[variedad].confidenceCount++;
-      }
-    });
-
-    const bloques = Object.entries(variedades)
-      .map(([variedad, data]) => {
-        const reach = data.reach || 1;
-        const impact = data.impact || 1;
-
-        let confidence = data.confidenceCount
-          ? data.confidenceSum / data.confidenceCount
-          : 0;
-
-        if(confidence <= 0) confidence = 0.1;
-
-        let effort = data.effort || 1;
-        if(effort <= 0) effort = 1;
-
-        const score = (reach * impact * confidence) / effort;
-
-        let decision = "";
-        let texto = "";
-        let color = "";
-
-        if(score > 70){
-          decision = "🚀 ESCALAR";
-          texto = "Alta oportunidad comercial. Incrementar inversión, ensayos y empuje técnico.";
-          color = "green";
-        } else if(score > 30){
-          decision = "⚙️ OPTIMIZAR";
-          texto = "Buen potencial, pero requiere ajustes en ejecución o conversión.";
-          color = "yellow";
-        } else {
-          decision = "⛔ REVISAR";
-          texto = "Bajo rendimiento actual. Evaluar continuidad o rediseñar estrategia.";
-          color = "red";
-        }
-
-        return `
-          <div class="list-block">
-            <div class="kpi"><b>${variedad}</b></div>
-            <div class="kpi">Reach (leads): <b>${num(reach)}</b></div>
-            <div class="kpi">Impact (ventas): <b>${money(impact)}</b></div>
-            <div class="kpi">Confidence (ROI promedio): <b>${num(confidence)}</b></div>
-            <div class="kpi">Effort (costo total): <b>${money(effort)}</b></div>
-            <div class="kpi ${color}">Score RICE: <b>${num(score)}</b> | ${decision}</div>
-            <div class="kpi muted">${texto}</div>
-          </div>
-        `;
-      })
-      .join("");
-
-    document.getElementById("rice").innerHTML = bloques || `<p class="empty">No hay información suficiente para calcular RICE.</p>`;
+    document.getElementById("rice").innerHTML = bloques;
   }
 
   function aplicarFiltros(){
@@ -798,6 +914,3 @@
 </script>
 </body>
 </html>
-
-Ahora sígueme con el siguiente y te lo doy igual.  
-Escríbeme solo: **innovacion.html**
