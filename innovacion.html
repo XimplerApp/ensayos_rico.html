@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Innovación Varietal - Galera</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    :root{
+      --bg:#0f172a;
+      --card:#1e293b;
+      --line:#334155;
+      --text:#e2e8f0;
+      --muted:#94a3b8;
+      --primary:#38bdf8;
+      --danger:#ef4444;
+      --success:#22c55e;
+      --warn:#f59e0b;
+      --yellow:#facc15;
+    }
+
+    *{box-sizing:border-box}
+
+    body{
+      font-family:Arial,sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      padding:20px;
+      margin:0;
+    }
+
+    h1{
+      color:var(--primary);
+      margin-top:0;
+    }
+
+    h2,h3{
+      margin-top:0;
+    }
+
+    .container{
+      max-width:1280px;
+      margin:auto;
+    }
+
+    .card{
+      background:var(--card);
+      padding:20px;
+      border-radius:12px;
+      margin-bottom:20px;
+      border:1px solid var(--line);
+    }
+
+    .nav{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:20px;
+    }
+
+    .nav a{text-decoration:none}
+
+    button{
+      padding:10px;
+      border-radius:8px;
+      border:none;
+      background:var(--primary);
+      cursor:pointer;
+      font-weight:700;
+      color:#082f49;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+      gap:12px;
+    }
+
+    label{
+      display:block;
+      font-size:14px;
+      color:var(--muted);
+      margin-bottom:6px;
+    }
+
+    select,input{
+      width:100%;
+      padding:10px;
+      border-radius:8px;
+      border:none;
+      background:#fff;
+      color:#111827;
+    }
+
+    .actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:14px;
+    }
+
+    .actions button{
+      width:auto;
+    }
+
+    .mini{
+      background:#0b1220;
+      border:1px solid var(--line);
+      border-radius:10px;
+      padding:14px;
+    }
+
+    .mini span{
+      display:block;
+      color:var(--muted);
+      font-size:13px;
+      margin-bottom:6px;
+    }
+
+    .mini b{
+      font-size:22px;
+      color:var(--primary);
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      margin-top:12px;
+    }
+
+    th,td{
+      padding:10px;
+      border:1px solid var(--line);
+      text-align:center;
+      vertical-align:middle;
+    }
+
+    th{
+      background:#0b1220;
+    }
+
+    .kpi{
+      font-size:18px;
+      margin:8px 0;
+      line-height:1.45;
+    }
+
+    .green{color:var(--success)}
+    .red{color:var(--danger)}
+    .yellow{color:var(--yellow)}
+    .muted{color:var(--muted)}
+
+    .list-block{
+      background:#0b1220;
+      border:1px solid var(--line);
+      border-radius:10px;
+      padding:14px;
+      margin-top:10px;
+    }
+
+    .empty{
+      color:var(--muted);
+      font-style:italic;
+    }
+
+    .section-title{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+
+    .badge{
+      display:inline-block;
+      padding:4px 10px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:700;
+      background:#0b1220;
+      border:1px solid var(--line);
+      color:var(--muted);
+    }
+
+    .score-badge{
+      display:inline-block;
+      padding:4px 10px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:700;
+      border:1px solid var(--line);
+      background:#0b1220;
+    }
+
+    .radar-wrap{
+      display:grid;
+      grid-template-columns:minmax(320px,460px) 1fr;
+      gap:20px;
+      align-items:start;
+    }
+
+    .radar-panel{
+      background:#0b1220;
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:16px;
+    }
+
+    .radar-svg{
+      width:100%;
+      max-width:420px;
+      height:auto;
+      display:block;
+      margin:auto;
+    }
+
+    .legend{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+      gap:10px;
+      margin-top:10px;
+    }
+
+    .legend-item{
+      background:#111827;
+      border:1px solid var(--line);
+      border-radius:10px;
+      padding:10px;
+    }
+
+    .nowrap{white-space:nowrap}
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <div class="nav">
+    <a href="index.html"><button>📋 Ensayos</button></a>
+    <a href="bitacora.html"><button>📸 Bitácora</button></a>
+    <a href="resultados.html"><button>📊 Resultados</button></a>
+    <a href="pipeline.html"><button>🌱 Pipeline</button></a>
+    <a href="tablero.html"><button>🧠 Tablero</button></a>
+    <a href="inteligencia.html"><button>🚀 Inteligencia</button></a>
+    <a href="innovacion.html"><button>🧬 Innovación</button></a>
+  </div>
+
+  <h1>🧬 Innovación Varietal</h1>
+
+  <div class="card">
+    <div class="section-title">
+      <h2>Filtros</h2>
+      <span class="badge">Portafolio varietal y radar</span>
+    </div>
+
+    <div class="grid">
+      <div>
+        <label>Cultivo</label>
+        <select id="filtroCultivo"></select>
+      </div>
+      <div>
+        <label>Región</label>
+        <select id="filtroRegion"></select>
+      </div>
+      <div>
+        <label>Estado del ensayo</label>
+        <select id="filtroEstado"></select>
+      </div>
+      <div>
+        <label>Variedad</label>
+        <select id="filtroVariedad"></select>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button onclick="aplicarFiltros()">Aplicar filtros</button>
+      <button onclick="limpiarFiltros()">Limpiar filtros</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">
+      <h2>Resumen Ejecutivo</h2>
+      <span class="badge">Portafolio activo</span>
+    </div>
+    <div class="grid" id="resumenEjecutivo"></div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">
+      <h2>Radar de Innovación Varietal</h2>
+      <span class="badge">Escala 1 a 5</span>
+    </div>
+
+    <div class="grid" style="margin-bottom:14px;">
+      <div>
+        <label>Variedad para visualizar</label>
+        <select id="radarVariedad"></select>
+      </div>
+    </div>
+
+    <div class="radar-wrap">
+      <div class="radar-panel">
+        <div id="radarContainer"></div>
+      </div>
+      <div class="radar-panel">
+        <h3 id="radarTitulo">Detalle varietal</h3>
+        <div id="radarInsights"></div>
+        <div class="legend" id="radarLegend"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">
+      <h2>Portafolio Varietal</h2>
+      <span class="badge">Score y recomendación</span>
+    </div>
+    <table id="tablaPortafolio"></table>
+  </div>
+
+  <div class="card">
+    <div class="section-title">
+      <h2>Decisiones Recomendadas</h2>
+      <span class="badge">Priorización ejecutiva</span>
+    </div>
+    <div id="panelDecisiones"></div>
+  </div>
+
+</div>
+
+<script>
+  function getData(key){
+    try{
+      return JSON.parse(localStorage.getItem(key)) || [];
+    }catch(e){
+      return [];
+    }
+  }
+
+  const money = n => "$" + new Intl.NumberFormat("es-MX", {
+    minimumFractionDigits:2,
+    maximumFractionDigits:2
+  }).format(Number(n || 0));
+
+  const pct = n => new Intl.NumberFormat("es-MX", {
+    minimumFractionDigits:2,
+    maximumFractionDigits:2
+  }).format(Number(n || 0)) + "%";
+
+  const num = n => new Intl.NumberFormat("es-MX", {
+    minimumFractionDigits:2,
+    maximumFractionDigits:2
+  }).format(Number(n || 0));
+
+  let ensayos = getData("ensayos");
+  let resultados = getData("resultados");
+  let oportunidades = getData("oportunidades");
+
+  function latestResultadosMap(){
+    const mapObj = {};
+    resultados.forEach(r => {
+      const key = String(r.ensayo_id);
+      if(!mapObj[key]){
+        mapObj[key] = r;
+      }else{
+        const a = String(r.fechaActualizacionISO || r.fechaISO || r.id || "");
+        const b = String(mapObj[key].fechaActualizacionISO || mapObj[key].fechaISO || mapObj[key].id || "");
+        if(a > b){
+          mapObj[key] = r;
+        }
+      }
+    });
+    return mapObj;
+  }
+
+  function opportunitiesByEnsayo(ensayoId){
+    return oportunidades.filter(o => String(o.ensayo) === String(ensayoId));
+  }
+
+  function getCurrentFilters(){
+    return {
+      cultivo: document.getElementById("filtroCultivo").value,
+      region: document.getElementById("filtroRegion").value,
+      estado: document.getElementById("filtroEstado").value,
+      variedad: document.getElementById("filtroVariedad").value
+    };
+  }
+
+  function getFilteredEnsayos(){
+    const f = getCurrentFilters();
+
+    return ensayos.filter(e => {
+      if(f.cultivo && e.cultivo !== f.cultivo) return false;
+      if(f.region && e.region !== f.region) return false;
+      if(f.estado && e.estado !== f.estado) return false;
+      if(f.variedad && e.variedad_tratada !== f.variedad) return false;
+      return true;
+    });
+  }
+
+  function cargarFiltros(){
+    const cultivos = [...new Set(ensayos.map(e => e.cultivo).filter(Boolean))].sort();
+    const regiones = [...new Set(ensayos.map(e => e.region).filter(Boolean))].sort();
+    const estados = [...new Set(ensayos.map(e => e.estado).filter(Boolean))].sort();
+    const variedades = [...new Set(ensayos.map(e => e.variedad_tratada).filter(Boolean))].sort();
+
+    document.getElementById("filtroCultivo").innerHTML =
+      `<option value="">Todos</option>` +
+      cultivos.map(v => `<option value="${v}">${v}</option>`).join("");
+
+    document.getElementById("filtroRegion").innerHTML =
+      `<option value="">Todas</option>` +
+      regiones.map(v => `<option value="${v}">${v}</option>`).join("");
+
+    document.getElementById("filtroEstado").innerHTML =
+      `<option value="">Todos</option>` +
+      estados.map(v => `<option value="${v}">${v}</option>`).join("");
+
+    document.getElementById("filtroVariedad").innerHTML =
+      `<option value="">Todas</option>` +
+      variedades.map(v => `<option value="${v}">${v}</option>`).join("");
+  }
+
+  function limpiarFiltros(){
+    document.getElementById("filtroCultivo").value = "";
+    document.getElementById("filtroRegion").value = "";
+    document.getElementById("filtroEstado").value = "";
+    document.getElementById("filtroVariedad").value = "";
+    aplicarFiltros();
+  }
+
+  function scoreByThreshold(value, thresholds){
+    for(let i = 0; i < thresholds.length; i++){
+      if(value >= thresholds[i].min) return thresholds[i].score;
+    }
+    return 1;
+  }
+
+  function inverseScoreByThreshold(value, thresholds){
+    for(let i = 0; i < thresholds.length; i++){
+      if(value <= thresholds[i].max) return thresholds[i].score;
+    }
+    return 1;
+  }
+
+  function classifyVariety(v){
+    if(v.scoreFinal >= 4 && v.roiProm >= 0.3 && v.adopcionPct >= 25){
+      return {
+        label: "⭐ Escalar",
+        className: "green",
+        text: "Variedad sólida en retorno, adopción y tracción. Prioridad alta para expansión comercial."
+      };
+    }
+
+    if(v.scoreFinal >= 3.2 && v.roiProm >= 0.1){
+      return {
+        label: "🚀 Promesa",
+        className: "yellow",
+        text: "Buen potencial técnico-comercial. Requiere más demostración, seguimiento o evidencia regional."
+      };
+    }
+
+    if(v.scoreFinal >= 2.4){
+      return {
+        label: "🧪 Experimental",
+        className: "yellow",
+        text: "Aún necesita validación o conversión comercial antes de escalar."
+      };
+    }
+
+    return {
+      label: "⛔ Revisar",
+      className: "red",
+      text: "Desempeño limitado. Conviene rediseñar estrategia, reforzar evidencia o reconsiderar inversión."
+    };
+  }
+
+  function aggregateVarieties(){
+    const lista = getFilteredEnsayos();
+    const resultadosMap = latestResultadosMap();
+    const variedades = {};
+
+    lista.forEach(e => {
+      const key = e.variedad_tratada || "Sin variedad";
+      const r = resultadosMap[String(e.id)] || null;
+      const ops = opportunitiesByEnsayo(e.id);
+
+      if(!variedades[key]){
+        variedades[key] = {
+          variedad: key,
+          ensayos: 0,
+          cultivos: new Set(),
+          regiones: new Set(),
+          roiSum: 0,
+          roiCount: 0,
+          mejoraSum: 0,
+          mejoraCount: 0,
+          tratadoSum: 0,
+          tratadoCount: 0,
+          controlSum: 0,
+          controlCount: 0,
+          plagaSum: 0,
+          plagaCount: 0,
+          calidadCount: 0,
+          leads: 0,
+          ventas: 0,
+          estimado: 0,
+          adopcionCount: 0,
+          recompraCount: 0
+        };
+      }
+
+      const v = variedades[key];
+      v.ensayos++;
+      v.cultivos.add(e.cultivo || "");
+      v.regiones.add(e.region || "");
+
+      if(r){
+        if(typeof r.roi === "number"){
+          v.roiSum += Number(r.roi || 0);
+          v.roiCount++;
+        }
+        if(typeof r.porcentaje === "number"){
+          v.mejoraSum += Number(r.porcentaje || 0);
+          v.mejoraCount++;
+        }
+        if(typeof r.rendTratado === "number"){
+          v.tratadoSum += Number(r.rendTratado || 0);
+          v.tratadoCount++;
+        }
+        if(typeof r.rendControl === "number"){
+          v.controlSum += Number(r.rendControl || 0);
+          v.controlCount++;
+        }
+        if(typeof r.incidenciaPlaga === "number"){
+          v.plagaSum += Number(r.incidenciaPlaga || 0);
+          v.plagaCount++;
+        }
+        if(r.calidadComercial && String(r.calidadComercial).trim()){
+          v.calidadCount++;
+        }
+      }
+
+      const leads = ops.reduce((a,b) => a + Number(b.leads || 0), 0);
+      const ventas = ops.reduce((a,b) => a + Number(b.ventaCerrada || 0), 0);
+      const estimado = ops.reduce((a,b) => a + Number(b.ventaEstimada || 0), 0);
+      const recompra = ops.some(o => o.recompra === "Sí") ? 1 : 0;
+
+      v.leads += leads;
+      v.ventas += ventas;
+      v.estimado += estimado;
+      v.recompraCount += recompra;
+      if(ventas > 0) v.adopcionCount++;
+    });
+
+    return Object.values(variedades).map(v => {
+      const roiProm = v.roiCount ? v.roiSum / v.roiCount : 0;
+      const mejoraProm = v.mejoraCount ? v.mejoraSum / v.mejoraCount : 0;
+      const rendTratadoProm = v.tratadoCount ? v.tratadoSum / v.tratadoCount : 0;
+      const rendControlProm = v.controlCount ? v.controlSum / v.controlCount : 0;
+      const incidenciaProm = v.plagaCount ? v.plagaSum / v.plagaCount : null;
+      const adopcionPct = v.ensayos ? (v.adopcionCount / v.ensayos) * 100 : 0;
+      const conversionValor = v.estimado > 0 ? (v.ventas / v.estimado) * 100 : 0;
+      const leadsPorEnsayo = v.ensayos ? v.leads / v.ensayos : 0;
+
+      const rendimientoScore = scoreByThreshold(mejoraProm, [
+        { min: 20, score: 5 },
+        { min: 15, score: 4 },
+        { min: 8,  score: 3 },
+        { min: 0.01, score: 2 }
+      ]);
+
+      const roiScore = scoreByThreshold(roiProm, [
+        { min: 0.60, score: 5 },
+        { min: 0.30, score: 4 },
+        { min: 0.10, score: 3 },
+        { min: 0.00, score: 2 }
+      ]);
+
+      const conversionScore = scoreByThreshold(conversionValor, [
+        { min: 50, score: 5 },
+        { min: 30, score: 4 },
+        { min: 15, score: 3 },
+        { min: 0.01, score: 2 }
+      ]);
+
+      const adopcionScore = scoreByThreshold(adopcionPct, [
+        { min: 60, score: 5 },
+        { min: 40, score: 4 },
+        { min: 25, score: 3 },
+        { min: 10, score: 2 }
+      ]);
+
+      const sanidadScore = incidenciaProm === null ? 3 : inverseScoreByThreshold(incidenciaProm, [
+        { max: 3,  score: 5 },
+        { max: 6,  score: 4 },
+        { max: 10, score: 3 },
+        { max: 15, score: 2 }
+      ]);
+
+      const traccionScore = scoreByThreshold(leadsPorEnsayo, [
+        { min: 8, score: 5 },
+        { min: 5, score: 4 },
+        { min: 3, score: 3 },
+        { min: 1, score: 2 }
+      ]);
+
+      const scoreFinal =
+        (rendimientoScore * 0.25) +
+        (roiScore * 0.20) +
+        (conversionScore * 0.15) +
+        (adopcionScore * 0.15) +
+        (sanidadScore * 0.10) +
+        (traccionScore * 0.15);
+
+      const status = classifyVariety({
+        scoreFinal,
+        roiProm,
+        adopcionPct
+      });
+
+      return {
+        ...v,
+        roiProm,
+        mejoraProm,
+        rendTratadoProm,
+        rendControlProm,
+        incidenciaProm,
+        adopcionPct,
+        conversionValor,
+        leadsPorEnsayo,
+        rendimientoScore,
+        roiScore,
+        conversionScore,
+        adopcionScore,
+        sanidadScore,
+        traccionScore,
+        scoreFinal,
+        status
+      };
+    }).sort((a,b) => b.scoreFinal - a.scoreFinal);
+  }
+
+  function renderResumen(){
+    const variedades = aggregateVarieties();
+
+    const estrellas = variedades.filter(v => v.status.label.includes("Escalar")).length;
+    const promesas = variedades.filter(v => v.status.label.includes("Promesa")).length;
+    const pipelineEstimado = variedades.reduce((a,b) => a + Number(b.estimado || 0), 0);
+    const ventas = variedades.reduce((a,b) => a + Number(b.ventas || 0), 0);
+    const scoreProm = variedades.length ? variedades.reduce((a,b) => a + Number(b.scoreFinal || 0), 0) / variedades.length : 0;
+    const roiProm = variedades.length ? variedades.reduce((a,b) => a + Number(b.roiProm || 0), 0) / variedades.length : 0;
+
+    document.getElementById("resumenEjecutivo").innerHTML = `
+      <div class="mini">
+        <span>Variedades evaluadas</span>
+        <b>${variedades.length}</b>
+      </div>
+      <div class="mini">
+        <span>Variedades estrella</span>
+        <b>${estrellas}</b>
+      </div>
+      <div class="mini">
+        <span>Variedades promesa</span>
+        <b>${promesas}</b>
+      </div>
+      <div class="mini">
+        <span>Pipeline estimado</span>
+        <b>${money(pipelineEstimado)}</b>
+      </div>
+      <div class="mini">
+        <span>Ventas derivadas</span>
+        <b>${money(ventas)}</b>
+      </div>
+      <div class="mini">
+        <span>Score promedio</span>
+        <b>${num(scoreProm)}</b>
+      </div>
+      <div class="mini">
+        <span>ROI promedio portafolio</span>
+        <b>${pct(roiProm * 100)}</b>
+      </div>
+    `;
+  }
+
+  function renderTablaPortafolio(){
+    const variedades = aggregateVarieties();
+
+    let html = `
+      <tr>
+        <th>Variedad</th>
+        <th>Cultivos</th>
+        <th>Regiones</th>
+        <th>Ensayos</th>
+        <th>Mejora</th>
+        <th>ROI</th>
+        <th>Ventas</th>
+        <th>Adopción</th>
+        <th>Score</th>
+        <th>Decisión</th>
+      </tr>
+    `;
+
+    if(!variedades.length){
+      html += `
+        <tr>
+          <td colspan="10" class="empty">No hay información suficiente para el portafolio varietal.</td>
+        </tr>
+      `;
+      document.getElementById("tablaPortafolio").innerHTML = html;
+      return;
+    }
+
+    variedades.forEach(v => {
+      html += `
+        <tr>
+          <td><b>${v.variedad}</b></td>
+          <td>${[...v.cultivos].filter(Boolean).join(", ") || "N/D"}</td>
+          <td>${[...v.regiones].filter(Boolean).join(", ") || "N/D"}</td>
+          <td>${v.ensayos}</td>
+          <td>${pct(v.mejoraProm)}</td>
+          <td class="${v.roiProm >= 0.3 ? 'green' : v.roiProm >= 0 ? 'yellow' : 'red'}"><b>${pct(v.roiProm * 100)}</b></td>
+          <td>${money(v.ventas)}</td>
+          <td>${pct(v.adopcionPct)}</td>
+          <td><b>${num(v.scoreFinal)}</b></td>
+          <td class="${v.status.className}"><b>${v.status.label}</b></td>
+        </tr>
+      `;
+    });
+
+    document.getElementById("tablaPortafolio").innerHTML = html;
+  }
+
+  function polarPoint(cx, cy, radius, angleDeg){
+    const rad = (angleDeg - 90) * Math.PI / 180;
+    return {
+      x: cx + radius * Math.cos(rad),
+      y: cy + radius * Math.sin(rad)
+    };
+  }
+
+  function renderRadar(){
+    const variedades = aggregateVarieties();
+    const select = document.getElementById("radarVariedad");
+
+    if(!variedades.length){
+      select.innerHTML = `<option value="">Sin variedades</option>`;
+      document.getElementById("radarContainer").innerHTML = `<p class="empty">No hay datos para radar.</p>`;
+      document.getElementById("radarInsights").innerHTML = "";
+      document.getElementById("radarLegend").innerHTML = "";
+      document.getElementById("radarTitulo").innerText = "Detalle varietal";
+      return;
+    }
+
+    const current = select.value;
+    select.innerHTML = variedades.map(v => `<option value="${v.variedad}">${v.variedad}</option>`).join("");
+    select.value = variedades.some(v => v.variedad === current) ? current : variedades[0].variedad;
+
+    const selected = variedades.find(v => v.variedad === select.value) || variedades[0];
+
+    const labels = [
+      { key:"rendimientoScore", text:"Rendimiento" },
+      { key:"roiScore", text:"ROI" },
+      { key:"conversionScore", text:"Conversión" },
+      { key:"adopcionScore", text:"Adopción" },
+      { key:"sanidadScore", text:"Sanidad" },
+      { key:"traccionScore", text:"Tracción" }
+    ];
+
+    const cx = 210;
+    const cy = 210;
+    const maxR = 130;
+    const levels = 5;
+
+    let gridPolygons = "";
+    for(let level = 1; level <= levels; level++){
+      const r = (maxR / levels) * level;
+      const pts = labels.map((_, i) => {
+        const angle = (360 / labels.length) * i;
+        const p = polarPoint(cx, cy, r, angle);
+        return `${p.x},${p.y}`;
+      }).join(" ");
+      gridPolygons += `<polygon points="${pts}" fill="none" stroke="#334155" stroke-width="1"></polygon>`;
+    }
+
+    let axes = "";
+    let textLabels = "";
+
+    labels.forEach((item, i) => {
+      const angle = (360 / labels.length) * i;
+      const p = polarPoint(cx, cy, maxR, angle);
+      const t = polarPoint(cx, cy, maxR + 26, angle);
+
+      axes += `<line x1="${cx}" y1="${cy}" x2="${p.x}" y2="${p.y}" stroke="#475569" stroke-width="1"></line>`;
+      textLabels += `<text x="${t.x}" y="${t.y}" fill="#94a3b8" font-size="12" text-anchor="middle">${item.text}</text>`;
+    });
+
+    const valuePoints = labels.map((item, i) => {
+      const angle = (360 / labels.length) * i;
+      const val = selected[item.key] || 1;
+      const r = (maxR / levels) * val;
+      const p = polarPoint(cx, cy, r, angle);
+      return `${p.x},${p.y}`;
+    }).join(" ");
+
+    const svg = `
+      <svg viewBox="0 0 420 420" class="radar-svg" aria-label="Radar varietal">
+        ${gridPolygons}
+        ${axes}
+        <polygon points="${valuePoints}" fill="rgba(56,189,248,0.25)" stroke="#38bdf8" stroke-width="3"></polygon>
+        <circle cx="${cx}" cy="${cy}" r="3" fill="#38bdf8"></circle>
+        ${textLabels}
+      </svg>
+    `;
+
+    document.getElementById("radarContainer").innerHTML = svg;
+    document.getElementById("radarTitulo").innerText = `${selected.variedad} — ${selected.status.label}`;
+
+    document.getElementById("radarInsights").innerHTML = `
+      <div class="kpi">Score final: <b>${num(selected.scoreFinal)}</b></div>
+      <div class="kpi">ROI promedio: <b>${pct(selected.roiProm * 100)}</b></div>
+      <div class="kpi">Mejora promedio: <b>${pct(selected.mejoraProm)}</b></div>
+      <div class="kpi">Adopción: <b>${pct(selected.adopcionPct)}</b></div>
+      <div class="kpi">Ventas derivadas: <b>${money(selected.ventas)}</b></div>
+      <div class="kpi ${selected.status.className}"><b>${selected.status.text}</b></div>
+    `;
+
+    document.getElementById("radarLegend").innerHTML = `
+      <div class="legend-item"><b>Rendimiento</b><br>${num(selected.rendimientoScore)} / 5</div>
+      <div class="legend-item"><b>ROI</b><br>${num(selected.roiScore)} / 5</div>
+      <div class="legend-item"><b>Conversión</b><br>${num(selected.conversionScore)} / 5</div>
+      <div class="legend-item"><b>Adopción</b><br>${num(selected.adopcionScore)} / 5</div>
+      <div class="legend-item"><b>Sanidad</b><br>${num(selected.sanidadScore)} / 5</div>
+      <div class="legend-item"><b>Tracción</b><br>${num(selected.traccionScore)} / 5</div>
+    `;
+  }
+
+  function renderDecisiones(){
+    const variedades = aggregateVarieties();
+
+    if(!variedades.length){
+      document.getElementById("panelDecisiones").innerHTML = `<p class="empty">No hay recomendaciones por mostrar.</p>`;
+      return;
+    }
+
+    const top = variedades.slice(0, 5);
+    const bottom = variedades.slice(-3).reverse();
+
+    let html = `<div class="grid">`;
+
+    html += `
+      <div class="list-block">
+        <h3>Prioridad alta</h3>
+        ${top.map(v => `
+          <div class="kpi ${v.status.className}">
+            <b>${v.variedad}</b> — ${v.status.label}<br>
+            Score: ${num(v.scoreFinal)} | ROI: ${pct(v.roiProm * 100)} | Ventas: ${money(v.ventas)}
+          </div>
+        `).join("")}
+      </div>
+    `;
+
+    html += `
+      <div class="list-block">
+        <h3>Variedades a revisar</h3>
+        ${bottom.map(v => `
+          <div class="kpi ${v.status.className}">
+            <b>${v.variedad}</b> — ${v.status.label}<br>
+            Score: ${num(v.scoreFinal)} | ROI: ${pct(v.roiProm * 100)} | Adopción: ${pct(v.adopcionPct)}
+          </div>
+        `).join("")}
+      </div>
+    `;
+
+    html += `</div>`;
+
+    document.getElementById("panelDecisiones").innerHTML = html;
+  }
+
+  function aplicarFiltros(){
+    renderResumen();
+    renderTablaPortafolio();
+    renderRadar();
+    renderDecisiones();
+  }
+
+  document.getElementById("radarVariedad").addEventListener("change", renderRadar);
+
+  cargarFiltros();
+  aplicarFiltros();
+</script>
+</body>
+</html>
