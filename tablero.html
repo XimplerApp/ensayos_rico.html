@@ -2,26 +2,139 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Tablero Operativo</title>
+  <title>Tablero Operativo - Galera</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     :root{
-      --bg:#0f172a; --card:#1e293b; --line:#334155; --text:#e2e8f0;
-      --muted:#94a3b8; --primary:#38bdf8; --danger:#ef4444; --success:#22c55e; --warn:#facc15;
+      --bg:#0f172a;
+      --card:#1e293b;
+      --line:#334155;
+      --text:#e2e8f0;
+      --muted:#94a3b8;
+      --primary:#38bdf8;
+      --danger:#ef4444;
+      --success:#22c55e;
+      --warn:#facc15;
     }
     *{box-sizing:border-box}
-    body{font-family:Arial,sans-serif;background:var(--bg);color:var(--text);padding:20px}
-    h1{color:var(--primary);margin-top:0}
-    .container{max-width:1200px;margin:auto}
-    .card{background:var(--card);padding:20px;border-radius:12px;margin-bottom:20px;border:1px solid var(--line)}
-    .nav{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+    body{
+      font-family:Arial,sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      padding:20px;
+      margin:0;
+    }
+    h1{
+      color:var(--primary);
+      margin-top:0;
+    }
+    h2,h3{
+      margin-top:0;
+    }
+    .container{
+      max-width:1280px;
+      margin:auto;
+    }
+    .card{
+      background:var(--card);
+      padding:20px;
+      border-radius:12px;
+      margin-bottom:20px;
+      border:1px solid var(--line);
+    }
+    .nav{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:20px;
+    }
     .nav a{text-decoration:none}
-    button{padding:10px;border-radius:8px;border:none;background:var(--primary);cursor:pointer;font-weight:700}
-    .kpi{font-size:18px;margin:8px 0}
-    .green{color:#22c55e}
-    .red{color:#ef4444}
-    .yellow{color:#facc15}
+    button{
+      padding:10px;
+      border-radius:8px;
+      border:none;
+      background:var(--primary);
+      cursor:pointer;
+      font-weight:700;
+      color:#082f49;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+      gap:12px;
+    }
+    .mini{
+      background:#0b1220;
+      border:1px solid var(--line);
+      border-radius:10px;
+      padding:14px;
+    }
+    .mini span{
+      display:block;
+      color:var(--muted);
+      font-size:13px;
+      margin-bottom:6px;
+    }
+    .mini b{
+      font-size:22px;
+      color:var(--primary);
+    }
+    .kpi{
+      font-size:18px;
+      margin:8px 0;
+      line-height:1.45;
+    }
+    .green{color:var(--success)}
+    .red{color:var(--danger)}
+    .yellow{color:var(--warn)}
     .muted{color:var(--muted)}
+    .section-title{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+    .badge{
+      display:inline-block;
+      padding:4px 10px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:700;
+      background:#0b1220;
+      border:1px solid var(--line);
+      color:var(--muted);
+    }
+    .list-block{
+      background:#0b1220;
+      border:1px solid var(--line);
+      border-radius:10px;
+      padding:14px;
+      margin-top:10px;
+    }
+    .empty{
+      color:var(--muted);
+      font-style:italic;
+    }
+    table{
+      width:100%;
+      border-collapse:collapse;
+      margin-top:12px;
+    }
+    th,td{
+      padding:10px;
+      border:1px solid var(--line);
+      text-align:center;
+      vertical-align:middle;
+    }
+    th{
+      background:#0b1220;
+    }
+    hr{
+      border:none;
+      border-top:1px solid var(--line);
+      margin:14px 0;
+    }
   </style>
 </head>
 <body>
@@ -39,25 +152,515 @@
   <h1>🧠 Tablero Operativo</h1>
 
   <div class="card">
-    <h2>🔬 KPIs Técnicos</h2>
+    <div class="section-title">
+      <h2>Resumen Ejecutivo</h2>
+      <span class="badge">Consolidado general</span>
+    </div>
+    <div class="grid" id="resumenEjecutivo"></div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">
+      <h2>🔬 KPIs Técnicos</h2>
+      <span class="badge">Base: ensayos + resultados</span>
+    </div>
     <div id="kpiTecnico"></div>
   </div>
 
   <div class="card">
-    <h2>💰 KPIs Comerciales</h2>
+    <div class="section-title">
+      <h2>💰 KPIs Comerciales</h2>
+      <span class="badge">Base: pipeline + cierres</span>
+    </div>
     <div id="kpiComercial"></div>
   </div>
 
   <div class="card">
-    <h2>🚀 KPIs Estratégicos</h2>
+    <div class="section-title">
+      <h2>🚀 KPIs Estratégicos</h2>
+      <span class="badge">Dirección y comparación de ciclos</span>
+    </div>
     <div id="kpiEstrategico"></div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">
+      <h2>👨‍🔬 ROI Promedio por Técnico</h2>
+      <span class="badge">Último resultado por ensayo</span>
+    </div>
+    <div id="roiTecnico"></div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">
+      <h2>📦 Ensayos sin Pipeline</h2>
+      <span class="badge">Sin oportunidades registradas</span>
+    </div>
+    <div id="sinPipeline"></div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">
+      <h2>🔄 Comparativo Ciclo Actual vs Anterior</h2>
+      <span class="badge">Calculado desde fecha de siembra</span>
+    </div>
+    <div id="comparativoCiclos"></div>
   </div>
 </div>
 
 <script>
   function getData(key){
-    try{ return JSON.parse(localStorage.getItem(key)) || []; }
-    catch(e){ return []; }
+    try{
+      return JSON.parse(localStorage.getItem(key)) || [];
+    }catch(e){
+      return [];
+    }
   }
-  const money = n => "$" + new Intl.NumberFormat("es-MX", {minimumFractionDigits:2, maximumFractionDigits:2}).format(Number(n || 0));
+
+  const money = n => "$" + new Intl.NumberFormat("es-MX", {
+    minimumFractionDigits:2,
+    maximumFractionDigits:2
+  }).format(Number(n || 0));
+
+  const pct = n => new Intl.NumberFormat("es-MX", {
+    minimumFractionDigits:2,
+    maximumFractionDigits:2
+  }).format(Number(n || 0)) + "%";
+
+  const num = n => new Intl.NumberFormat("es-MX", {
+    minimumFractionDigits:2,
+    maximumFractionDigits:2
+  }).format(Number(n || 0));
+
+  function formatDate(iso){
+    if(!iso) return "N/D";
+    const d = new Date(iso + "T00:00:00");
+    if(isNaN(d)) return iso;
+    return d.toLocaleDateString("es-MX");
+  }
+
+  function ensayoLabel(e){
+    return `${e.id} | ${e.cultivo || ""} | ${e.variedad_tratada || ""} | ${e.productor || ""}`;
+  }
+
+  let ensayos = getData("ensayos");
+  let resultados = getData("resultados");
+  let oportunidades = getData("oportunidades");
+
+  function latestResultadosMap(){
+    const mapObj = {};
+    resultados.forEach(r => {
+      const key = String(r.ensayo_id);
+      if(!mapObj[key]){
+        mapObj[key] = r;
+      }else{
+        const a = String(r.fechaActualizacionISO || r.fechaISO || r.id || "");
+        const b = String(mapObj[key].fechaActualizacionISO || mapObj[key].fechaISO || mapObj[key].id || "");
+        if(a > b){
+          mapObj[key] = r;
+        }
+      }
+    });
+    return mapObj;
+  }
+
+  function opportunitiesByEnsayo(ensayoId){
+    return oportunidades.filter(o => String(o.ensayo) === String(ensayoId));
+  }
+
+  function closedSalesByEnsayo(ensayoId){
+    return oportunidades.filter(o =>
+      String(o.ensayo) === String(ensayoId) &&
+      Number(o.ventaCerrada || 0) > 0
+    );
+  }
+
+  function earliestClosedSaleDate(ensayoId){
+    const lista = closedSalesByEnsayo(ensayoId)
+      .map(o => o.fechaVentaCerrada || o.fechaRegistro || "")
+      .filter(Boolean)
+      .sort();
+    return lista[0] || "";
+  }
+
+  function daysBetween(startISO, endISO){
+    if(!startISO || !endISO) return null;
+    const start = new Date(startISO + "T00:00:00");
+    const end = new Date(endISO + "T00:00:00");
+    if(isNaN(start) || isNaN(end)) return null;
+    const diff = Math.round((end - start) / (1000 * 60 * 60 * 24));
+    return diff >= 0 ? diff : null;
+  }
+
+  function statusClassByPercent(value, good, warn){
+    if(value >= good) return "green";
+    if(value >= warn) return "yellow";
+    return "red";
+  }
+
+  function statusClassByInverse(value, good, warn){
+    if(value <= good) return "green";
+    if(value <= warn) return "yellow";
+    return "red";
+  }
+
+  function getCycleOrder(){
+    const ciclos = {};
+
+    ensayos.forEach(e => {
+      const ciclo = e.ciclo || "Sin ciclo";
+      const fecha = e.fecha_siembra || "1900-01-01";
+      if(!ciclos[ciclo] || fecha > ciclos[ciclo]){
+        ciclos[ciclo] = fecha;
+      }
+    });
+
+    return Object.entries(ciclos)
+      .sort((a,b) => String(b[1]).localeCompare(String(a[1])))
+      .map(x => x[0]);
+  }
+
+  function buildCycleMetrics(ciclo){
+    const resultadosMap = latestResultadosMap();
+    const ensayosCiclo = ensayos.filter(e => (e.ciclo || "Sin ciclo") === ciclo);
+
+    const total = ensayosCiclo.length;
+
+    const conVenta = ensayosCiclo.filter(e => {
+      return opportunitiesByEnsayo(e.id).reduce((a,b) => a + Number(b.ventaCerrada || 0), 0) > 0;
+    }).length;
+
+    const conversion = total ? (conVenta / total) * 100 : 0;
+
+    const ventas = ensayosCiclo.reduce((acc,e) => {
+      return acc + opportunitiesByEnsayo(e.id).reduce((a,b) => a + Number(b.ventaCerrada || 0), 0);
+    }, 0);
+
+    const roiValues = ensayosCiclo
+      .map(e => resultadosMap[String(e.id)]?.roi)
+      .filter(v => typeof v === "number");
+
+    const roiProm = roiValues.length
+      ? roiValues.reduce((a,b) => a + b, 0) / roiValues.length
+      : 0;
+
+    return {
+      ciclo,
+      total,
+      conVenta,
+      conversion,
+      ventas,
+      roiProm
+    };
+  }
+
+  function renderResumenEjecutivo(){
+    const resultadosMap = latestResultadosMap();
+
+    const totalEnsayos = ensayos.length;
+    const activos = ensayos.filter(e => e.estado === "Activo").length;
+    const terminados = ensayos.filter(e => e.estado === "Terminado").length;
+
+    const totalVentas = oportunidades.reduce((a,b) => a + Number(b.ventaCerrada || 0), 0);
+    const totalLeads = oportunidades.reduce((a,b) => a + Number(b.leads || 0), 0);
+
+    const roiValues = Object.values(resultadosMap)
+      .map(r => Number(r.roi || 0));
+
+    const roiProm = roiValues.length
+      ? roiValues.reduce((a,b) => a + b, 0) / roiValues.length
+      : 0;
+
+    document.getElementById("resumenEjecutivo").innerHTML = `
+      <div class="mini">
+        <span>Total ensayos</span>
+        <b>${totalEnsayos}</b>
+      </div>
+      <div class="mini">
+        <span>Ensayos activos</span>
+        <b>${activos}</b>
+      </div>
+      <div class="mini">
+        <span>Ensayos terminados</span>
+        <b>${terminados}</b>
+      </div>
+      <div class="mini">
+        <span>Leads acumulados</span>
+        <b>${num(totalLeads)}</b>
+      </div>
+      <div class="mini">
+        <span>Ventas cerradas</span>
+        <b>${money(totalVentas)}</b>
+      </div>
+      <div class="mini">
+        <span>ROI promedio</span>
+        <b>${pct(roiProm * 100)}</b>
+      </div>
+    `;
+  }
+
+  function renderTecnicos(){
+    const resultadosMap = latestResultadosMap();
+
+    const total = ensayos.length;
+    const planeados = ensayos.filter(e => e.estado === "Planeado").length;
+    const activos = ensayos.filter(e => e.estado === "Activo").length;
+    const terminados = ensayos.filter(e => e.estado === "Terminado").length;
+    const activosPct = total ? (activos / total) * 100 : 0;
+
+    const rendTratadoValues = Object.values(resultadosMap)
+      .map(r => Number(r.rendTratado || 0))
+      .filter(v => !isNaN(v));
+
+    const mejoraValues = Object.values(resultadosMap)
+      .map(r => Number(r.porcentaje || 0))
+      .filter(v => !isNaN(v));
+
+    const rendProm = rendTratadoValues.length
+      ? rendTratadoValues.reduce((a,b) => a + b, 0) / rendTratadoValues.length
+      : 0;
+
+    const mejoraProm = mejoraValues.length
+      ? mejoraValues.reduce((a,b) => a + b, 0) / mejoraValues.length
+      : 0;
+
+    const activosClass = statusClassByPercent(activosPct, 60, 30);
+    const mejoraClass = mejoraProm >= 15 ? "green" : mejoraProm >= 5 ? "yellow" : "red";
+
+    document.getElementById("kpiTecnico").innerHTML = `
+      <div class="kpi ${activosClass}">📌 % Ensayos activos: <b>${pct(activosPct)}</b></div>
+      <div class="kpi">🗂 Planeados / Activos / Terminados: <b>${planeados} / ${activos} / ${terminados}</b></div>
+      <div class="kpi">🌾 Rendimiento promedio tratado: <b>${num(rendProm)} ton/ha</b></div>
+      <div class="kpi ${mejoraClass}">📈 Mejora promedio vs control: <b>${pct(mejoraProm)}</b></div>
+    `;
+  }
+
+  function renderComerciales(){
+    const ensayosTot = ensayos.length || 0;
+
+    const ensayosConVenta = ensayos.filter(e => {
+      const totalVenta = opportunitiesByEnsayo(e.id).reduce((a,b) => a + Number(b.ventaCerrada || 0), 0);
+      return totalVenta > 0;
+    }).length;
+
+    const conversion = ensayosTot ? (ensayosConVenta / ensayosTot) * 100 : 0;
+
+    const totalLeads = oportunidades.reduce((a,b) => a + Number(b.leads || 0), 0);
+    const leadsPorEnsayo = ensayosTot ? totalLeads / ensayosTot : 0;
+
+    const ventaEstimada = oportunidades.reduce((a,b) => a + Number(b.ventaEstimada || 0), 0);
+    const ventaCerrada = oportunidades.reduce((a,b) => a + Number(b.ventaCerrada || 0), 0);
+    const conversionValor = ventaEstimada > 0 ? (ventaCerrada / ventaEstimada) * 100 : 0;
+
+    const tiempos = ensayos
+      .map(e => {
+        const cierre = earliestClosedSaleDate(e.id);
+        return daysBetween(e.fecha_siembra, cierre);
+      })
+      .filter(v => v !== null);
+
+    const tiempoProm = tiempos.length
+      ? tiempos.reduce((a,b) => a + b, 0) / tiempos.length
+      : 0;
+
+    const convClass = statusClassByPercent(conversion, 25, 10);
+    const convValorClass = statusClassByPercent(conversionValor, 25, 10);
+    const tiempoClass = tiempos.length ? statusClassByInverse(tiempoProm, 90, 180) : "muted";
+
+    document.getElementById("kpiComercial").innerHTML = `
+      <div class="kpi ${convClass}">📈 Tasa de conversión ensayo → venta: <b>${pct(conversion)}</b></div>
+      <div class="kpi">📊 Leads por ensayo: <b>${num(leadsPorEnsayo)}</b></div>
+      <div class="kpi">🧾 Venta estimada acumulada: <b>${money(ventaEstimada)}</b></div>
+      <div class="kpi">💵 Venta cerrada acumulada: <b>${money(ventaCerrada)}</b></div>
+      <div class="kpi ${convValorClass}">🔁 Conversión por valor: <b>${pct(conversionValor)}</b></div>
+      <div class="kpi ${tiempoClass}">⏱ Tiempo promedio ensayo → cierre: <b>${tiempos.length ? num(tiempoProm) + " días" : "Sin datos suficientes"}</b></div>
+    `;
+  }
+
+  function renderEstrategicos(){
+    const resultadosMap = latestResultadosMap();
+
+    const ensayosSinPipeline = ensayos.filter(e => opportunitiesByEnsayo(e.id).length === 0);
+
+    const roiValues = Object.values(resultadosMap)
+      .map(r => Number(r.roi || 0));
+
+    const roiProm = roiValues.length
+      ? roiValues.reduce((a,b) => a + b, 0) / roiValues.length
+      : 0;
+
+    const ciclos = getCycleOrder();
+    const cicloActual = ciclos[0] || null;
+    const cicloAnterior = ciclos[1] || null;
+
+    let comparativoTexto = "";
+
+    if(cicloActual && cicloAnterior){
+      const actual = buildCycleMetrics(cicloActual);
+      const anterior = buildCycleMetrics(cicloAnterior);
+
+      comparativoTexto = `
+        <div class="list-block">
+          <div class="kpi"><b>Ciclo actual:</b> ${actual.ciclo}</div>
+          <div class="kpi">Ensayos: <b>${actual.total}</b></div>
+          <div class="kpi">Conversión ensayo → venta: <b>${pct(actual.conversion)}</b></div>
+          <div class="kpi">ROI promedio: <b>${pct(actual.roiProm * 100)}</b></div>
+          <div class="kpi">Ventas cerradas: <b>${money(actual.ventas)}</b></div>
+        </div>
+
+        <div class="list-block">
+          <div class="kpi"><b>Ciclo anterior:</b> ${anterior.ciclo}</div>
+          <div class="kpi">Ensayos: <b>${anterior.total}</b></div>
+          <div class="kpi">Conversión ensayo → venta: <b>${pct(anterior.conversion)}</b></div>
+          <div class="kpi">ROI promedio: <b>${pct(anterior.roiProm * 100)}</b></div>
+          <div class="kpi">Ventas cerradas: <b>${money(anterior.ventas)}</b></div>
+        </div>
+      `;
+    } else {
+      comparativoTexto = `<p class="empty">No hay ciclos suficientes para comparar ciclo actual vs anterior.</p>`;
+    }
+
+    document.getElementById("kpiEstrategico").innerHTML = `
+      <div class="kpi ${roiProm >= 0.3 ? 'green' : roiProm >= 0 ? 'yellow' : 'red'}">💰 ROI promedio global: <b>${pct(roiProm * 100)}</b></div>
+      <div class="kpi">📦 Ensayos sin pipeline: <b>${ensayosSinPipeline.length}</b></div>
+      <div class="kpi">🔄 Ciclo actual detectado: <b>${cicloActual || "N/D"}</b></div>
+      <div class="kpi">⏮ Ciclo anterior detectado: <b>${cicloAnterior || "N/D"}</b></div>
+      <hr>
+      ${comparativoTexto}
+    `;
+  }
+
+  function renderRoiTecnico(){
+    const resultadosMap = latestResultadosMap();
+    const porTecnico = {};
+
+    ensayos.forEach(e => {
+      const r = resultadosMap[String(e.id)];
+      if(!r) return;
+
+      const tecnico = e.tecnico || "Sin técnico";
+
+      if(!porTecnico[tecnico]){
+        porTecnico[tecnico] = [];
+      }
+
+      porTecnico[tecnico].push(Number(r.roi || 0));
+    });
+
+    const entries = Object.entries(porTecnico)
+      .map(([tecnico, rois]) => ({
+        tecnico,
+        cantidad: rois.length,
+        roiProm: rois.reduce((a,b) => a + b, 0) / rois.length
+      }))
+      .sort((a,b) => b.roiProm - a.roiProm);
+
+    if(!entries.length){
+      document.getElementById("roiTecnico").innerHTML = `<p class="empty">Aún no hay resultados suficientes por técnico.</p>`;
+      return;
+    }
+
+    let html = `
+      <table>
+        <tr>
+          <th>Técnico</th>
+          <th>Ensayos con resultado</th>
+          <th>ROI promedio</th>
+        </tr>
+    `;
+
+    entries.forEach(item => {
+      const cls = item.roiProm >= 0.3 ? "green" : item.roiProm >= 0 ? "yellow" : "red";
+      html += `
+        <tr>
+          <td>${item.tecnico}</td>
+          <td>${item.cantidad}</td>
+          <td class="${cls}"><b>${pct(item.roiProm * 100)}</b></td>
+        </tr>
+      `;
+    });
+
+    html += `</table>`;
+    document.getElementById("roiTecnico").innerHTML = html;
+  }
+
+  function renderSinPipeline(){
+    const lista = ensayos.filter(e => opportunitiesByEnsayo(e.id).length === 0);
+
+    if(!lista.length){
+      document.getElementById("sinPipeline").innerHTML = `<p class="empty">Todos los ensayos tienen al menos un registro en pipeline.</p>`;
+      return;
+    }
+
+    const html = lista.map(e => `
+      <div class="list-block">
+        <div class="kpi"><b>${ensayoLabel(e)}</b></div>
+        <div class="kpi">Técnico: <b>${e.tecnico || "N/D"}</b></div>
+        <div class="kpi">Ciclo: <b>${e.ciclo || "N/D"}</b></div>
+        <div class="kpi">Fecha siembra: <b>${formatDate(e.fecha_siembra)}</b></div>
+        <div class="kpi">Estado: <b>${e.estado || "N/D"}</b></div>
+      </div>
+    `).join("");
+
+    document.getElementById("sinPipeline").innerHTML = html;
+  }
+
+  function renderComparativoCiclos(){
+    const ciclos = getCycleOrder();
+    const actual = ciclos[0];
+    const anterior = ciclos[1];
+
+    if(!actual || !anterior){
+      document.getElementById("comparativoCiclos").innerHTML = `<p class="empty">No hay suficiente información para comparar ciclos.</p>`;
+      return;
+    }
+
+    const a = buildCycleMetrics(actual);
+    const b = buildCycleMetrics(anterior);
+
+    document.getElementById("comparativoCiclos").innerHTML = `
+      <table>
+        <tr>
+          <th>Métrica</th>
+          <th>${a.ciclo}</th>
+          <th>${b.ciclo}</th>
+        </tr>
+        <tr>
+          <td>Ensayos</td>
+          <td>${a.total}</td>
+          <td>${b.total}</td>
+        </tr>
+        <tr>
+          <td>Ensayos con venta</td>
+          <td>${a.conVenta}</td>
+          <td>${b.conVenta}</td>
+        </tr>
+        <tr>
+          <td>Conversión ensayo → venta</td>
+          <td>${pct(a.conversion)}</td>
+          <td>${pct(b.conversion)}</td>
+        </tr>
+        <tr>
+          <td>ROI promedio</td>
+          <td>${pct(a.roiProm * 100)}</td>
+          <td>${pct(b.roiProm * 100)}</td>
+        </tr>
+        <tr>
+          <td>Ventas cerradas</td>
+          <td>${money(a.ventas)}</td>
+          <td>${money(b.ventas)}</td>
+        </tr>
+      </table>
+    `;
+  }
+
+  renderResumenEjecutivo();
+  renderTecnicos();
+  renderComerciales();
+  renderEstrategicos();
+  renderRoiTecnico();
+  renderSinPipeline();
+  renderComparativoCiclos();
+</script>
+</body>
 </html>
