@@ -1,6 +1,3 @@
-# index.html
-
-```html
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -10,34 +7,136 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     :root{
-      --bg:#0f172a; --card:#1e293b; --line:#334155; --text:#e2e8f0;
-      --muted:#94a3b8; --primary:#38bdf8; --danger:#ef4444; --success:#22c55e; --warn:#f59e0b;
+      --bg:#0f172a;
+      --card:#1e293b;
+      --line:#334155;
+      --text:#e2e8f0;
+      --muted:#94a3b8;
+      --primary:#38bdf8;
+      --danger:#ef4444;
+      --success:#22c55e;
+      --warn:#f59e0b;
+      --danger-bg:#3b0f14;
     }
     *{box-sizing:border-box}
-    body{font-family:Arial,sans-serif;background:var(--bg);color:var(--text);padding:20px}
+    body{
+      font-family:Arial,sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      padding:20px;
+      margin:0;
+    }
     h1{color:var(--primary);margin-top:0}
     h2{margin-top:0}
-    .container{max-width:1200px;margin:auto}
-    .card{background:var(--card);padding:20px;border-radius:12px;margin-bottom:20px;border:1px solid var(--line)}
-    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
-    input,select,button{width:100%;padding:10px;border-radius:8px;border:none}
-    input,select{margin-top:6px;background:#fff;color:#111827}
-    label{display:block;font-size:14px;color:var(--muted);margin-top:6px}
-    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+    .container{max-width:1280px;margin:auto}
+    .card{
+      background:var(--card);
+      padding:20px;
+      border-radius:12px;
+      margin-bottom:20px;
+      border:1px solid var(--line);
+    }
+    .alert-card{
+      background:var(--danger-bg);
+      border:1px solid var(--danger);
+    }
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+      gap:12px;
+    }
+    input,select,button{
+      width:100%;
+      padding:10px;
+      border-radius:8px;
+      border:none;
+    }
+    input,select{
+      margin-top:6px;
+      background:#fff;
+      color:#111827;
+    }
+    label{
+      display:block;
+      font-size:14px;
+      color:var(--muted);
+      margin-top:6px;
+    }
+    .actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:14px;
+    }
     .actions button,.nav button{width:auto}
-    button{background:var(--primary);cursor:pointer;font-weight:700}
+    button{
+      background:var(--primary);
+      cursor:pointer;
+      font-weight:700;
+      color:#082f49;
+    }
     .danger{background:var(--danger);color:#fff}
     .export{background:var(--success);color:#fff}
     .edit{background:var(--warn);color:#111827}
-    .nav{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+    .nav{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:20px;
+    }
     .nav a{text-decoration:none}
-    table{width:100%;border-collapse:collapse;margin-top:12px}
-    th,td{padding:10px;border:1px solid var(--line);text-align:center}
+    table{
+      width:100%;
+      border-collapse:collapse;
+      margin-top:12px;
+    }
+    th,td{
+      padding:10px;
+      border:1px solid var(--line);
+      text-align:center;
+      vertical-align:middle;
+    }
     th{background:#0b1220}
-    .summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
-    .mini{background:#0b1220;border:1px solid var(--line);border-radius:10px;padding:14px}
-    .mini b{display:block;font-size:22px;color:var(--primary);margin-top:4px}
+    .summary{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+      gap:12px;
+    }
+    .mini{
+      background:#0b1220;
+      border:1px solid var(--line);
+      border-radius:10px;
+      padding:14px;
+    }
+    .mini b{
+      display:block;
+      font-size:22px;
+      color:var(--primary);
+      margin-top:4px;
+    }
     .muted{color:var(--muted)}
+    .danger-text{color:#fecaca}
+    .list-block{
+      background:#0b1220;
+      border:1px solid var(--line);
+      border-radius:10px;
+      padding:14px;
+      margin-top:10px;
+    }
+    .empty{
+      color:var(--muted);
+      font-style:italic;
+    }
+    .badge{
+      display:inline-block;
+      padding:4px 10px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:700;
+      border:1px solid var(--line);
+      background:#0b1220;
+      color:var(--muted);
+    }
   </style>
 </head>
 <body>
@@ -81,6 +180,26 @@
       <div><label>Proveedor control</label><input id="proveedor" placeholder="Ej. Proveedor X"></div>
       <div><label>Superficie ensayo</label><input id="superficie" placeholder="Ej. 0.5 ha"></div>
       <div><label>Productor</label><input id="productor" placeholder="Ej. Productor Gómez"></div>
+
+      <div>
+        <label>Prioridad</label>
+        <select id="prioridad">
+          <option value="Alta">Alta</option>
+          <option value="Media" selected>Media</option>
+          <option value="Baja">Baja</option>
+        </select>
+      </div>
+
+      <div>
+        <label>Vínculo comercial explícito</label>
+        <select id="vinculoComercial">
+          <option value="Sí">Sí</option>
+          <option value="No">No</option>
+        </select>
+      </div>
+
+      <div><label>Cliente / cuenta objetivo</label><input id="clienteObjetivo" placeholder="Ej. Productor / distribuidor / cuenta"></div>
+
       <div>
         <label>Estado</label>
         <select id="estado">
@@ -102,6 +221,11 @@
     <div class="summary" id="resumen"></div>
   </div>
 
+  <div class="card alert-card">
+    <h2>🚨 Ensayos terminados sin oportunidad comercial</h2>
+    <div id="alertasPerdidos"></div>
+  </div>
+
   <div class="card">
     <h2>Ensayos Registrados</h2>
     <div class="actions">
@@ -111,10 +235,12 @@
     <table>
       <thead>
         <tr>
-          <th>ID</th>
+          <th>Folio</th>
           <th>Cultivo</th>
           <th>Variedad</th>
           <th>Región</th>
+          <th>Prioridad</th>
+          <th>Vínculo comercial</th>
           <th>Estado</th>
           <th>Fecha siembra</th>
           <th>Acciones</th>
@@ -132,9 +258,11 @@
     try{ return JSON.parse(localStorage.getItem(key)) || []; }
     catch(e){ return []; }
   }
+
   function saveData(key, data){
     localStorage.setItem(key, JSON.stringify(data));
   }
+
   function formatDate(iso){
     if(!iso) return "";
     const d = new Date(iso + "T00:00:00");
@@ -145,13 +273,36 @@
   let ensayos = getData("ensayos");
   let editId = null;
 
+  function generateEnsayoId(){
+    const year = new Date().getFullYear();
+    const regex = new RegExp(`^ENS-${year}-(\\d{3})$`);
+    let max = 0;
+
+    ensayos.forEach(e => {
+      const match = String(e.id || "").match(regex);
+      if(match){
+        max = Math.max(max, parseInt(match[1], 10));
+      }
+    });
+
+    return `ENS-${year}-${String(max + 1).padStart(3, "0")}`;
+  }
+
   function limpiarFormulario(){
     editId = null;
     $("modo").innerText = "Nuevo Ensayo";
     $("btnCancelar").style.display = "none";
-    ["tecnico","region","cultivo","objetivo","ciclo","suelo","riego","siembra","cosecha","variedadTratada","variedadControl","proveedor","superficie","productor"].forEach(id => $(id).value = "");
+
+    [
+      "tecnico","region","cultivo","objetivo","ciclo","suelo","riego",
+      "siembra","cosecha","variedadTratada","variedadControl","proveedor",
+      "superficie","productor","clienteObjetivo"
+    ].forEach(id => $(id).value = "");
+
     $("sistema").value = "Campo abierto";
     $("estado").value = "Planeado";
+    $("prioridad").value = "Media";
+    $("vinculoComercial").value = "Sí";
   }
 
   function cancelarEdicion(){
@@ -159,9 +310,10 @@
   }
 
   function editar(id){
-    const e = ensayos.find(x => x.id === id);
+    const e = ensayos.find(x => String(x.id) === String(id));
     if(!e) return;
-    editId = id;
+
+    editId = String(id);
     $("modo").innerText = "Editar Ensayo";
     $("btnCancelar").style.display = "inline-block";
 
@@ -180,14 +332,35 @@
     $("proveedor").value = e.proveedor_control || "";
     $("superficie").value = e.superficie || "";
     $("productor").value = e.productor || "";
+    $("prioridad").value = e.prioridad || "Media";
+    $("vinculoComercial").value = e.vinculo_comercial || "Sí";
+    $("clienteObjetivo").value = e.cliente_objetivo || "";
     $("estado").value = e.estado || "Planeado";
+
     window.scrollTo({top:0, behavior:"smooth"});
   }
 
   function guardar(){
     const nowIso = new Date().toISOString();
+
+    const fechaSiembra = $("siembra").value;
+    const fechaCosecha = $("cosecha").value;
+
+    if(fechaSiembra && fechaCosecha && fechaCosecha <= fechaSiembra){
+      alert("La fecha estimada de cosecha debe ser posterior a la fecha de siembra.");
+      return;
+    }
+
+    const vinculoComercial = $("vinculoComercial").value;
+    const clienteObjetivo = $("clienteObjetivo").value.trim();
+
+    if(vinculoComercial === "Sí" && !clienteObjetivo){
+      alert("Si el ensayo tiene vínculo comercial explícito, captura el cliente o cuenta objetivo.");
+      return;
+    }
+
     const ensayo = {
-      id: editId || Date.now(),
+      id: editId || generateEnsayoId(),
       tecnico: $("tecnico").value.trim(),
       region: $("region").value.trim(),
       cultivo: $("cultivo").value.trim(),
@@ -196,15 +369,18 @@
       sistema: $("sistema").value,
       suelo: $("suelo").value.trim(),
       riego: $("riego").value.trim(),
-      fecha_siembra: $("siembra").value,
-      fecha_cosecha: $("cosecha").value,
+      fecha_siembra: fechaSiembra,
+      fecha_cosecha: fechaCosecha,
       variedad_tratada: $("variedadTratada").value.trim(),
       variedad_control: $("variedadControl").value.trim(),
       proveedor_control: $("proveedor").value.trim(),
       superficie: $("superficie").value.trim(),
       productor: $("productor").value.trim(),
+      prioridad: $("prioridad").value,
+      vinculo_comercial: vinculoComercial,
+      cliente_objetivo: clienteObjetivo,
       estado: $("estado").value,
-      fecha_alta_iso: editId ? (ensayos.find(x => x.id === editId)?.fecha_alta_iso || nowIso) : nowIso,
+      fecha_alta_iso: editId ? (ensayos.find(x => String(x.id) === String(editId))?.fecha_alta_iso || nowIso) : nowIso,
       fecha_actualizacion_iso: nowIso
     };
 
@@ -214,7 +390,7 @@
     }
 
     if(editId){
-      ensayos = ensayos.map(x => x.id === editId ? ensayo : x);
+      ensayos = ensayos.map(x => String(x.id) === String(editId) ? ensayo : x);
     }else{
       ensayos.push(ensayo);
     }
@@ -226,23 +402,52 @@
 
   function eliminar(id){
     if(!confirm("¿Eliminar este ensayo?")) return;
-    ensayos = ensayos.filter(e => e.id !== id);
+    ensayos = ensayos.filter(e => String(e.id) !== String(id));
     saveData("ensayos", ensayos);
     render();
   }
 
   function renderResumen(){
+    const oportunidades = getData("oportunidades");
+
     const total = ensayos.length;
     const planeados = ensayos.filter(e => e.estado === "Planeado").length;
     const activos = ensayos.filter(e => e.estado === "Activo").length;
     const terminados = ensayos.filter(e => e.estado === "Terminado").length;
+    const terminadosSinPipeline = ensayos.filter(e =>
+      e.estado === "Terminado" &&
+      !oportunidades.some(o => String(o.ensayo) === String(e.id))
+    ).length;
 
     $("resumen").innerHTML = `
       <div class="mini">Total ensayos<b>${total}</b></div>
       <div class="mini">Planeados<b>${planeados}</b></div>
       <div class="mini">Activos<b>${activos}</b></div>
       <div class="mini">Terminados<b>${terminados}</b></div>
+      <div class="mini">Terminados sin pipeline<b>${terminadosSinPipeline}</b></div>
     `;
+  }
+
+  function renderAlertasPerdidos(){
+    const oportunidades = getData("oportunidades");
+
+    const perdidos = ensayos.filter(e =>
+      e.estado === "Terminado" &&
+      !oportunidades.some(o => String(o.ensayo) === String(e.id))
+    );
+
+    if(!perdidos.length){
+      $("alertasPerdidos").innerHTML = `<p class="empty">No hay ensayos terminados sin oportunidad comercial registrada.</p>`;
+      return;
+    }
+
+    $("alertasPerdidos").innerHTML = perdidos.map(e => `
+      <div class="list-block">
+        <div><b>${e.id}</b> — ${e.cultivo || ""} / ${e.variedad_tratada || ""}</div>
+        <div class="danger-text">Región: ${e.region || "N/D"} | Técnico: ${e.tecnico || "N/D"} | Productor: ${e.productor || "N/D"}</div>
+        <div class="danger-text">Prioridad: ${e.prioridad || "N/D"} | Cliente objetivo: ${e.cliente_objetivo || "N/D"}</div>
+      </div>
+    `).join("");
   }
 
   function render(){
@@ -251,7 +456,7 @@
 
     ensayos
       .slice()
-      .sort((a,b) => (b.fecha_alta_iso || "").localeCompare(a.fecha_alta_iso || ""))
+      .sort((a,b) => String(b.fecha_alta_iso || "").localeCompare(String(a.fecha_alta_iso || "")))
       .forEach(e => {
         tabla.innerHTML += `
           <tr>
@@ -259,12 +464,14 @@
             <td>${e.cultivo || ""}</td>
             <td>${e.variedad_tratada || ""}</td>
             <td>${e.region || ""}</td>
+            <td>${e.prioridad || ""}</td>
+            <td>${e.vinculo_comercial || ""}</td>
             <td>${e.estado || ""}</td>
             <td>${formatDate(e.fecha_siembra)}</td>
             <td>
               <div class="actions" style="justify-content:center;">
-                <button class="edit" onclick="editar(${e.id})">Editar</button>
-                <button class="danger" onclick="eliminar(${e.id})">Eliminar</button>
+                <button class="edit" onclick="editar('${String(e.id)}')">Editar</button>
+                <button class="danger" onclick="eliminar('${String(e.id)}')">Eliminar</button>
               </div>
             </td>
           </tr>
@@ -272,11 +479,12 @@
       });
 
     renderResumen();
+    renderAlertasPerdidos();
   }
 
   function exportarExcel(){
     const data = ensayos.map(e => ({
-      "ID Ensayo": e.id,
+      "Folio Ensayo": e.id,
       "Técnico": e.tecnico,
       "Región": e.region,
       "Cultivo": e.cultivo,
@@ -292,6 +500,9 @@
       "Proveedor Control": e.proveedor_control,
       "Superficie": e.superficie,
       "Productor": e.productor,
+      "Prioridad": e.prioridad,
+      "Vínculo Comercial": e.vinculo_comercial,
+      "Cliente Objetivo": e.cliente_objetivo,
       "Estado": e.estado,
       "Fecha Alta ISO": e.fecha_alta_iso || "",
       "Fecha Actualización ISO": e.fecha_actualizacion_iso || ""
