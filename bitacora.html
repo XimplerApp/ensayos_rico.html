@@ -9,30 +9,97 @@
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <style>
     :root{
-      --bg:#0f172a; --card:#1e293b; --line:#334155; --text:#e2e8f0;
-      --muted:#94a3b8; --primary:#38bdf8; --danger:#ef4444; --success:#22c55e; --warn:#f59e0b;
+      --bg:#0f172a;
+      --card:#1e293b;
+      --line:#334155;
+      --text:#e2e8f0;
+      --muted:#94a3b8;
+      --primary:#38bdf8;
+      --danger:#ef4444;
+      --success:#22c55e;
+      --warn:#f59e0b;
     }
     *{box-sizing:border-box}
-    body{font-family:Arial,sans-serif;background:var(--bg);color:var(--text);padding:20px}
+    body{
+      font-family:Arial,sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      padding:20px;
+      margin:0;
+    }
     h1{color:var(--primary);margin-top:0}
     .container{max-width:1200px;margin:auto}
-    .card{background:var(--card);padding:20px;border-radius:12px;margin-bottom:20px;border:1px solid var(--line)}
-    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
-    input,select,button,textarea{width:100%;padding:10px;border-radius:8px;border:none}
-    input,select,textarea{margin-top:6px;background:#fff;color:#111827}
-    label{display:block;font-size:14px;color:var(--muted);margin-top:6px}
-    button{background:var(--primary);cursor:pointer;font-weight:700}
-    .nav{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}
+    .card{
+      background:var(--card);
+      padding:20px;
+      border-radius:12px;
+      margin-bottom:20px;
+      border:1px solid var(--line);
+    }
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+      gap:12px;
+    }
+    input,select,button,textarea{
+      width:100%;
+      padding:10px;
+      border-radius:8px;
+      border:none;
+    }
+    input,select,textarea{
+      margin-top:6px;
+      background:#fff;
+      color:#111827;
+    }
+    label{
+      display:block;
+      font-size:14px;
+      color:var(--muted);
+      margin-top:6px;
+    }
+    button{
+      background:var(--primary);
+      cursor:pointer;
+      font-weight:700;
+    }
+    .nav{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:20px;
+    }
     .nav a{text-decoration:none}
     .nav button{width:auto}
-    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+    .actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:14px;
+    }
     .actions button{width:auto}
     .export{background:var(--success);color:#fff}
     .edit{background:var(--warn);color:#111827}
     .delete{background:var(--danger);color:#fff}
-    #map{height:320px;border-radius:12px;border:1px solid var(--line);margin-top:10px}
-    img{max-width:100%;border-radius:10px;margin-top:10px;border:1px solid var(--line)}
-    .timeline-item{background:#0b1220;border:1px solid var(--line);border-radius:12px;padding:16px;margin-top:12px}
+    #map{
+      height:320px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      margin-top:10px;
+    }
+    img{
+      max-width:100%;
+      border-radius:10px;
+      margin-top:10px;
+      border:1px solid var(--line);
+    }
+    .timeline-item{
+      background:#0b1220;
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:16px;
+      margin-top:12px;
+    }
     .muted{color:var(--muted)}
   </style>
 </head>
@@ -82,4 +149,284 @@
     <div id="map"></div>
     <p id="coords" class="muted"></p>
 
+    <div class="actions">
+      <button onclick="guardarBitacora()">Guardar registro</button>
+      <button class="edit" id="btnCancelar" onclick="cancelarEdicion()" style="display:none;">Cancelar edición</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Filtrar Timeline</h2>
+    <div class="grid">
+      <div>
+        <label>Ensayo</label>
+        <select id="filtroEnsayo"></select>
+      </div>
+      <div>
+        <label>Etapa</label>
+        <select id="filtroEtapa">
+          <option value="">Todas</option>
+          <option value="Siembra">Siembra</option>
+          <option value="Desarrollo">Desarrollo</option>
+          <option value="Cosecha">Cosecha</option>
+        </select>
+      </div>
+    </div>
+    <div class="actions">
+      <button onclick="render()">Aplicar filtros</button>
+      <button class="export" onclick="exportarExcel()">📊 Exportar Excel</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Timeline</h2>
+    <div id="timeline"></div>
+  </div>
+</div>
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  function getData(key){
+    try{
+      return JSON.parse(localStorage.getItem(key)) || [];
+    }catch(e){
+      return [];
+    }
+  }
+
+  function saveData(key, data){
+    localStorage.setItem(key, JSON.stringify(data));
+  }
+
+  function formatDateTime(iso){
+    if(!iso) return "";
+    const d = new Date(iso);
+    if(isNaN(d)) return iso;
+    return d.toLocaleString("es-MX");
+  }
+
+  let ensayos = getData("ensayos");
+  let bitacora = getData("bitacora");
+  let editId = null;
+  let lat = null;
+  let lng = null;
+  let marker = null;
+
+  function ensayoLabel(e){
+    return `${e.id} | ${e.cultivo || ""} | ${e.variedad_tratada || ""} | ${e.productor || ""}`;
+  }
+
+  function cargarEnsayos(){
+    ensayos = getData("ensayos");
+
+    $("ensayoSelect").innerHTML = "";
+    $("filtroEnsayo").innerHTML = '<option value="">Todos los ensayos</option>';
+
+    if(!ensayos.length){
+      $("ensayoSelect").innerHTML = '<option value="">No hay ensayos capturados</option>';
+      return;
+    }
+
+    ensayos.forEach(e => {
+      $("ensayoSelect").innerHTML += `<option value="${e.id}">${ensayoLabel(e)}</option>`;
+      $("filtroEnsayo").innerHTML += `<option value="${e.id}">${ensayoLabel(e)}</option>`;
+    });
+  }
+
+  const map = L.map("map").setView([23.6, -102.5], 5);
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19
+  }).addTo(map);
+
+  map.on("click", function(e){
+    lat = e.latlng.lat;
+    lng = e.latlng.lng;
+
+    if(marker) map.removeLayer(marker);
+    marker = L.marker([lat, lng]).addTo(map);
+
+    $("coords").innerText = `Lat: ${lat.toFixed(5)} | Lng: ${lng.toFixed(5)}`;
+  });
+
+  function limpiarMapa(){
+    lat = null;
+    lng = null;
+    $("coords").innerText = "";
+    if(marker){
+      map.removeLayer(marker);
+      marker = null;
+    }
+  }
+
+  function limpiarFormulario(){
+    editId = null;
+    $("modo").innerText = "Nuevo Registro";
+    $("btnCancelar").style.display = "none";
+    $("responsable").value = "";
+    $("comentario").value = "";
+    $("foto").value = "";
+    $("etapa").value = "Siembra";
+    limpiarMapa();
+  }
+
+  function cancelarEdicion(){
+    limpiarFormulario();
+  }
+
+  function guardarBitacora(){
+    if(!$("ensayoSelect").value){
+      alert("Selecciona un ensayo.");
+      return;
+    }
+
+    if(!$("responsable").value.trim()){
+      alert("Captura el responsable.");
+      return;
+    }
+
+    const file = $("foto").files[0];
+
+    if(file){
+      const reader = new FileReader();
+      reader.onload = () => guardarRegistro(reader.result);
+      reader.readAsDataURL(file);
+    }else{
+      const existing = editId ? (bitacora.find(b => b.id === editId)?.foto || null) : null;
+      guardarRegistro(existing);
+    }
+  }
+
+  function guardarRegistro(fotoBase64){
+    const nowIso = new Date().toISOString();
+
+    const registro = {
+      id: editId || Date.now(),
+      ensayo_id: $("ensayoSelect").value,
+      responsable: $("responsable").value.trim(),
+      etapa: $("etapa").value,
+      comentario: $("comentario").value.trim(),
+      foto: fotoBase64 || null,
+      lat: lat,
+      lng: lng,
+      fechaISO: editId ? (bitacora.find(b => b.id === editId)?.fechaISO || nowIso) : nowIso,
+      fechaActualizacionISO: nowIso
+    };
+
+    if(editId){
+      bitacora = bitacora.map(b => b.id === editId ? registro : b);
+    }else{
+      bitacora.push(registro);
+    }
+
+    saveData("bitacora", bitacora);
+    limpiarFormulario();
+    render();
+  }
+
+  function editar(id){
+    const b = bitacora.find(x => x.id === id);
+    if(!b) return;
+
+    editId = id;
+    $("modo").innerText = "Editar Registro";
+    $("btnCancelar").style.display = "inline-block";
+
+    $("ensayoSelect").value = b.ensayo_id;
+    $("responsable").value = b.responsable || "";
+    $("etapa").value = b.etapa || "Siembra";
+    $("comentario").value = b.comentario || "";
+
+    limpiarMapa();
+
+    lat = typeof b.lat === "number" ? b.lat : null;
+    lng = typeof b.lng === "number" ? b.lng : null;
+
+    if(lat !== null && lng !== null){
+      marker = L.marker([lat, lng]).addTo(map);
+      map.setView([lat, lng], 12);
+      $("coords").innerText = `Lat: ${lat.toFixed(5)} | Lng: ${lng.toFixed(5)}`;
+    }
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function eliminar(id){
+    if(!confirm("¿Eliminar este registro de bitácora?")) return;
+    bitacora = bitacora.filter(b => b.id !== id);
+    saveData("bitacora", bitacora);
+    render();
+  }
+
+  function render(){
+    bitacora = getData("bitacora");
+    ensayos = getData("ensayos");
+
+    const ensayoFiltro = $("filtroEnsayo").value;
+    const etapaFiltro = $("filtroEtapa").value;
+
+    let lista = bitacora.slice();
+
+    if(ensayoFiltro){
+      lista = lista.filter(b => String(b.ensayo_id) === String(ensayoFiltro));
+    }
+
+    if(etapaFiltro){
+      lista = lista.filter(b => b.etapa === etapaFiltro);
+    }
+
+    lista.sort((a, b) => String(b.fechaISO || "").localeCompare(String(a.fechaISO || "")));
+
+    $("timeline").innerHTML = lista.length ? "" : `<p class="muted">No hay registros para los filtros seleccionados.</p>`;
+
+    lista.forEach(b => {
+      const e = ensayos.find(x => String(x.id) === String(b.ensayo_id)) || {};
+
+      $("timeline").innerHTML += `
+        <div class="timeline-item">
+          <h3>${ensayoLabel(e)}</h3>
+          <p><b>Responsable:</b> ${b.responsable || ""}</p>
+          <p><b>Etapa:</b> ${b.etapa || ""}</p>
+          <p><b>Fecha:</b> ${formatDateTime(b.fechaActualizacionISO || b.fechaISO)}</p>
+          <p>${b.comentario || ""}</p>
+          ${typeof b.lat === "number" && typeof b.lng === "number" ? `<p class="muted">Lat: ${b.lat.toFixed(5)} | Lng: ${b.lng.toFixed(5)}</p>` : ""}
+          ${b.foto ? `<img src="${b.foto}" alt="Foto evidencia">` : ""}
+          <div class="actions">
+            <button class="edit" onclick="editar(${b.id})">Editar</button>
+            <button class="delete" onclick="eliminar(${b.id})">Eliminar</button>
+          </div>
+        </div>
+      `;
+    });
+  }
+
+  function exportarExcel(){
+    const data = bitacora.map(b => {
+      const e = ensayos.find(x => String(x.id) === String(b.ensayo_id)) || {};
+      return {
+        "ID Ensayo": b.ensayo_id,
+        "Cultivo": e.cultivo || "",
+        "Variedad": e.variedad_tratada || "",
+        "Productor": e.productor || "",
+        "Responsable": b.responsable,
+        "Etapa": b.etapa,
+        "Comentario": b.comentario,
+        "Lat": typeof b.lat === "number" ? b.lat : "",
+        "Lng": typeof b.lng === "number" ? b.lng : "",
+        "Fecha ISO": b.fechaISO || "",
+        "Última actualización ISO": b.fechaActualizacionISO || ""
+      };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Bitacora");
+    XLSX.writeFile(wb, "Bitacora_Galera_Ajustada.xlsx");
+  }
+
+  cargarEnsayos();
+  render();
+</script>
+</body>
 </html>
